@@ -267,7 +267,7 @@ public class FunctionImplementationRegistry implements FunctionLookupContext {
               put("parameterType", parameter.getType().toString());
               try {
                 put("parameterFormat", (parameter.getType().toMinorType()));
-              } catch (Exception exception) {}
+              } catch (Exception ignored) {}
             }
           }
         );
