@@ -1408,7 +1408,6 @@ public class TestNativeFunctions extends BaseTestFunction {
     });
   }
 
-
   @Test
   public void testUpper() throws Exception {
     testFunctions(new Object[][]{
@@ -1464,6 +1463,28 @@ public class TestNativeFunctions extends BaseTestFunction {
       {"castBIGINT(c0)", "\\x2D\\x36\\x39", -69l},
       {"castBIGINT(c0))", "\\x39\\x32\\x32\\x33\\x33\\x37\\x32\\\\x30\\x33\\x36\\x38\\x35\\x34\\x37\\x37\\x35\\x38\\x30\\x37", Long.MAX_VALUE},
       {"castBIGINT(c0))", "\\x2D\\x39\\x32\\x32\\x33\\x33\\x37\\x32\\\\x30\\x33\\x36\\x38\\x35\\x34\\x37\\x37\\x35\\x38\\x30\\x38", Long.MIN_VALUE},
+    });
+  }
+
+  @Test
+  public void testCastFloat() throws Exception {
+    testFunctions(new Object[][]{
+      {"castFLOAT4(c0)", "\\x30", 0.0f},
+      {"castFLOAT4(c0)", "\\x2D\\x30\\x2E\\x30", 0.0f},
+      {"castFLOAT4(c0)", "\\x35\\x2E\\x36", 5.6f},
+      {"castFLOAT4(c0)", "\\x36\\x39\\x2E\\x35", 69.5f},
+      {"castFLOAT4(c0)", "\\x2D\\x36\\x39\\x2E\\x35", -69.5f},
+    });
+  }
+
+  @Test
+  public void testCastDouble() throws Exception {
+    testFunctions(new Object[][]{
+      {"castFLOAT8(c0)", "\\x30", 0.0},
+      {"castFLOAT8(c0)", "\\x2D\\x30\\x2E\\x30", 0.0},
+      {"castFLOAT8(c0)", "\\x35\\x2E\\x36", 5.6},
+      {"castFLOAT8(c0)", "\\x36\\x39\\x2E\\x35", 69.5},
+      {"castFLOAT8(c0)", "\\x2D\\x36\\x39\\x2E\\x35", -69.5},
     });
   }
 
