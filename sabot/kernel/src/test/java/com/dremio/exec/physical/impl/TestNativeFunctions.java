@@ -1382,4 +1382,14 @@ public class TestNativeFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void testLower() throws Exception {
+    testFunctions(new Object[][]{
+      {"lower(c0)", "ALL", "all"},
+      {"lower(c0)", "lowUP", "lowup"},
+      {"lower(c0)", "alMoST aLl LoWer", "almost all lower"},
+      {"lower(c0)", null, null},
+    });
+  }
+
 }
