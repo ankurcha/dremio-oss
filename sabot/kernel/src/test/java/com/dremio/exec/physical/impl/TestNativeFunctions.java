@@ -878,6 +878,20 @@ public class TestNativeFunctions extends BaseTestFunction {
   }
 
   @Test
+  public void testCastBinaryToVarchar() throws Exception {
+    testFunctions(new Object[][]{
+      {"castVARCHAR(binary_string(c0), c1)", "TestString", 10L, "TestString"},
+      {"castVARCHAR(binary_string(c0), c1)", "TestString", 20L, "TestString"},
+      {"castVARCHAR(binary_string(c0), c1)", "TestString", 4L, "Test"},
+      {"castVARCHAR(binary_string(c0), c1)", "TestString", 0L, "TestString"},
+      {"castVARCHAR(binary_string(c0), c1)", "\\x41\\x42\\x43", 3L, "ABC"},
+      {"castVARCHAR(binary_string(c0), c1)", "\\x41\\x42\\x43", 6L, "ABC"},
+      {"castVARCHAR(binary_string(c0), c1)", "\\x41\\x42\\x43", 2L, "AB"},
+      {"castVARCHAR(binary_string(c0), c1)", "\\x41\\x42\\x43", 0L, "ABC"},
+    });
+  }
+
+  @Test
   public void testCastBoolToVarchar() throws Exception {
     testFunctions(new Object[][]{
       {"castVARCHAR(c0, c1)", true, 2, "tr"},
@@ -941,46 +955,46 @@ public class TestNativeFunctions extends BaseTestFunction {
   @Test
   public void testCastINTFromBinary() throws Exception {
     testFunctions(new Object[][]{
-      {"castINT(binary_string(c0))", 12, "12"},
-      {"castINT(binary_string(c0))", -12, "-12"},
-      {"castINT(binary_string(c0))", Integer.MAX_VALUE, String.valueOf(Integer.MAX_VALUE)},
-      {"castINT(binary_string(c0))", Integer.MIN_VALUE, String.valueOf(Integer.MIN_VALUE)},
-      {"castINT(binary_string(c0))", 0, "-0"},
+      {"castINT(binary_string(c0))", "12", 12},
+      {"castINT(binary_string(c0))", "-12", -12},
+      {"castINT(binary_string(c0))", String.valueOf(Integer.MAX_VALUE), Integer.MAX_VALUE},
+      {"castINT(binary_string(c0))", String.valueOf(Integer.MIN_VALUE), Integer.MIN_VALUE},
+      {"castINT(binary_string(c0))", "-0", 0},
     });
   }
 
   @Test
   public void testCastBIGINTFromBinary() throws Exception {
     testFunctions(new Object[][]{
-      {"castBIGINT(binary_string(c0))", 12, "12"},
-      {"castINT(binary_string(c0))", -12, "-12"},
-      {"castBIGINT(binary_string(c0))", Long.MAX_VALUE, String.valueOf(Long.MAX_VALUE)},
-      {"castBIGINT(binary_string(c0))", Long.MIN_VALUE, String.valueOf(Long.MIN_VALUE)},
-      {"castBIGINT(binary_string(c0))", 0, "-0"},
+      {"castBIGINT(binary_string(c0))", "12",  12},
+      {"castINT(binary_string(c0))", "-12", -12},
+      {"castBIGINT(binary_string(c0))", String.valueOf(Long.MAX_VALUE), Long.MAX_VALUE},
+      {"castBIGINT(binary_string(c0))", String.valueOf(Long.MIN_VALUE), Long.MIN_VALUE},
+      {"castBIGINT(binary_string(c0))","-0", 0},
     });
   }
 
   @Test
   public void testCastFloat4FromBinary() throws Exception {
     testFunctions(new Object[][]{
-      {"castFLOAT4(binary_string(c0))", 12.6f, "12.6"},
-      {"castFLOAT4(binary_string(c0))", -12.6f, "-12.6"},
-      {"castFLOAT4(binary_string(c0))", Float.MAX_VALUE, String.valueOf(Float.MAX_VALUE)},
-      {"castFLOAT4(binary_string(c0))", Float.MIN_VALUE, String.valueOf(Float.MIN_VALUE)},
-      {"castFLOAT4(binary_string(c0))", 0, "-0"},
-      {"castFLOAT4(binary_string(c0))", 0, "-0.0"},
+      {"castFLOAT4(binary_string(c0))", "12.6", 12.6f},
+      {"castFLOAT4(binary_string(c0))", "-12.6", -12.6f},
+      {"castFLOAT4(binary_string(c0))", String.valueOf(Float.MAX_VALUE), Float.MAX_VALUE},
+      {"castFLOAT4(binary_string(c0))", String.valueOf(Float.MIN_VALUE), Float.MIN_VALUE},
+      {"castFLOAT4(binary_string(c0))", "-0", 0},
+      {"castFLOAT4(binary_string(c0))", "-0.0", 0},
     });
   }
 
   @Test
   public void testCastFloat8FromBinary() throws Exception {
     testFunctions(new Object[][]{
-      {"castFLOAT8(binary_string(c0))", 12.6, "12.6"},
-      {"castFLOAT8(binary_string(c0))", -12.6, "-12.6"},
-      {"castFLOAT8(binary_string(c0))", Double.MAX_VALUE, String.valueOf(Double.MAX_VALUE)},
-      {"castFLOAT8(binary_string(c0))", Double.MIN_VALUE, String.valueOf(Double.MIN_VALUE)},
-      {"castFLOAT8(binary_string(c0))", 0, "-0"},
-      {"castFLOAT8(binary_string(c0))", 0, "-0.0"},
+      {"castFLOAT8(binary_string(c0))", "12.6", 12.6},
+      {"castFLOAT8(binary_string(c0))", "-12.6", -12.6},
+      {"castFLOAT8(binary_string(c0))", String.valueOf(Double.MAX_VALUE), Double.MAX_VALUE},
+      {"castFLOAT8(binary_string(c0))", String.valueOf(Double.MIN_VALUE), Double.MIN_VALUE},
+      {"castFLOAT8(binary_string(c0))", "-0", 0},
+      {"castFLOAT8(binary_string(c0))", "-0.0", 0},
     });
   }
 
@@ -1226,5 +1240,50 @@ public class TestNativeFunctions extends BaseTestFunction {
         {"add(c0, 1)", 1, 2}
       });
     }
+  }
+
+  @Test
+  public void testIlike() throws Exception {
+
+    testFunctions(new Object[][]{
+      {"ilike(c0, '%SuPer%')", "superb", true},
+      {"ilike(c0, '%SuPer%')", "awesome superb", true},
+      {"ilike(c0, '%SuPer%')", "suppr", false},
+      {"ilike(c0, '%SuPer%')", NULL_VARCHAR, NULL_BOOLEAN},
+
+      {"ilike(c0, 'ArM_')", "arm", false},
+      {"like(c0, 'ArM_')", "army", true},
+      {"like(c0, 'ArM_')", "armies", false},
+    });
+  }
+
+  @Test
+  public void testUpper() throws Exception {
+    testFunctions(new Object[][]{
+      {"upper(c0)", "all", "ALL"},
+      {"upper(c0)", "lowUP", "LOWUP"},
+      {"upper(c0)", "alMoST aLl LoWer", "ALMOST ALL LOWER"},
+      {"upper(c0)", null, null},
+    });
+  }
+
+  @Test
+  public void testLower() throws Exception {
+    testFunctions(new Object[][]{
+      {"lower(c0)", "ALL", "all"},
+      {"lower(c0)", "lowUP", "lowup"},
+      {"lower(c0)", "alMoST aLl LoWer", "almost all lower"},
+      {"lower(c0)", null, null},
+    });
+  }
+
+  @Test
+  public void testInitCap() throws Exception {
+    testFunctions(new Object[][]{
+      {"initcap(c0)", "all", "All"},
+      {"initcap(c0)", "low up", "Low Up"},
+      {"initcap(c0)", "alL musT be capitilizeD", "AlL MusT Be CapitlizeD"},
+      {"initcap(c0)", null, null},
+    });
   }
 }
