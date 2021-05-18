@@ -1355,9 +1355,8 @@ public class TestNativeFunctions extends BaseTestFunction {
       {"convert_replaceUTF8(binary_string(c0), 'z')", "\\xf8-ABC-\\xf8-\\x41\\x42\\x43-\\xf8", "z-ABC-z-ABC-z"},
     });
   }
-}
 
-@Test
+  @Test
   public void testIlike() throws Exception {
 
     testFunctions(new Object[][]{
@@ -1371,3 +1370,5 @@ public class TestNativeFunctions extends BaseTestFunction {
       {"like(c0, 'ArM_')", "armies", false},
     });
   }
+
+}
