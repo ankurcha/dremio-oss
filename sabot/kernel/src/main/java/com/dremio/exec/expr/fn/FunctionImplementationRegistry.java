@@ -230,7 +230,7 @@ public class FunctionImplementationRegistry implements FunctionLookupContext {
     return isDecimalV2Enabled;
   }
 
-  public void generateYAMLWithRegisteredFunctions() throws IOException {
+  public void generateYAMLWithRegisteredFunctions() {
     // Retrieve the registered functions on the function registry
     ArrayListMultimap<String, AbstractFunctionHolder> functions = this.getRegisteredFunctions();
 
@@ -285,7 +285,11 @@ public class FunctionImplementationRegistry implements FunctionLookupContext {
 
       functionsToSave.put(functionName, stringObjectMap);
     }
-    om.writeValue(new File(System.getProperty("user.dir") + "/target/registered_functions.yaml"),
-      functionsToSave);
+    try {
+      om.writeValue(new File(System.getProperty("user.dir") + "/target/registered_functions.yaml"),
+        functionsToSave);
+    } catch (Exception exception) {
+      logger.warn("Failed generating YAML function files: " + exception.getMessage());
+    }
   }
 }
