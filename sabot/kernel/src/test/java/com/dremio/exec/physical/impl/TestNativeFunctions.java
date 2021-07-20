@@ -1189,6 +1189,122 @@ public class TestNativeFunctions extends BaseTestFunction {
   }
 
   @Test
+  public void testBinaryRepresentation(){
+    // Bin Hive function - returns the binary representation of a specified integer or long
+    testFunctions(new Object[][]{
+      {"bin(c0)", 0, "0"},
+      {"bin(c0)", 7, "111"},
+      {"bin(c0)", 28550, "110111110000110"},
+      {"bin(c0)", -28550, "1111111111111111111111111111111111111111111111111001000001111010"},
+      {"bin(c0)", Long.MAX_VALUE, "111111111111111111111111111111111111111111111111111111111111111"},
+      {"bin(c0)", Long.MIN_VALUE, "1000000000000000000000000000000000000000000000000000000000000000"},
+    });
+  }
+
+  @Test
+  public void testSpace(){
+    // Space Hive function - returns a string with a specified number of spaces
+    testFunctions(new Object[][]{
+      {"space(c0)", 1, " "},
+      {"space(c0)", 2, "  "},
+      {"space(c0)", 3, "   "},
+    });
+  }
+
+  @Test
+  public void testBase64Unbase64(){
+    // Base64 and Unbase64 Hive functions - returns the respective encoded and decoded base64 values
+    testFunctions(new Object[][]{
+      {"base64(c0)", "hello".getBytes(), "aGVsbG8="},
+      {"base64(c0)", "test".getBytes(), "dGVzdA=="},
+      {"base64(c0)", "hive".getBytes(), "aGl2ZQ=="},
+      {"unbase64(c0)", "aGVsbG8=", "hello".getBytes()},
+      {"unbase64(c0)", "dGVzdA==", "test".getBytes()},
+      {"unbase64(c0)", "aGl2ZQ==", "hive".getBytes()},
+    });
+  }
+
+  @Test
+  public void left(){
+    testFunctions(new Object[][]{
+      { "left('abcdef', 2)", "ab"},
+      { "left('abcdef', 6)", "abcdef"},
+      { "left('abcdef', 7)", "abcdef"},
+      { "left('abcdef', -2)", "abcd"},
+      { "left('abcdef', -5)", "a"},
+      { "left('abcdef', -6)", ""},
+      { "left('abcdef', -7)", ""}
+    });
+  }
+
+
+  @Test
+  public void lpad(){
+    testFunctions(new Object[][]{
+      { "lpad('abcdef', 0, 'abc')", ""},
+      { "lpad('abcdef', -3, 'abc')", ""},
+      { "lpad('abcdef', 6, 'abc')", "abcdef"},
+      { "lpad('abcdef', 2, 'abc')", "ab"},
+      { "lpad('abcdef', 2, '')", "ab"},
+      { "lpad('abcdef', 10, '')", "abcdef"},
+      { "lpad('abcdef', 10, 'A')", "AAAAabcdef"},
+      { "lpad('abcdef', 10, 'AB')", "ABABabcdef"},
+      { "lpad('abcdef', 10, 'ABC')", "ABCAabcdef"},
+      { "lpad('abcdef', 10, 'ABCDEFGHIJKLMN')", "ABCDabcdef"}
+
+    });
+  }
+
+  @Test
+  public void right(){
+    testFunctions(new Object[][]{
+      {"right('abcdef', 2)", "ef"},
+      {"right('abcdef', 6)", "abcdef"},
+      {"right('abcdef', 7)", "abcdef"},
+      {"right('abcdef', -2)", "cdef"},
+      {"right('abcdef', -5)", "f"},
+      {"right('abcdef', -6)", ""},
+      {"right('abcdef', -7)", ""}
+    });
+  }
+
+  @Test
+  public void rpad(){
+    testFunctions(new Object[][]{
+      { "rpad('abcdef', 0, 'abc')", ""},
+      { "rpad('abcdef', -3, 'abc')", ""},
+      { "rpad('abcdef', 6, 'abc')", "abcdef"},
+      { "rpad('abcdef', 2, 'abc')", "ab"},
+      { "rpad('abcdef', 2, '')", "ab"},
+      { "rpad('abcdef', 10, '')", "abcdef"},
+      { "rpad('abcdef', 10, 'A')", "abcdefAAAA"},
+      { "rpad('abcdef', 10, 'AB')", "abcdefABAB"},
+      { "rpad('abcdef', 10, 'ABC')", "abcdefABCA"},
+      { "rpad('abcdef', 10, 'ABCDEFGHIJKLMN')", "abcdefABCD"}
+
+    });
+  }
+
+  @Test
+  public void testCastBit() throws Exception {
+    testFunctions(new Object[][] {
+      {"castit(c0)", "false", false},
+      {"castit(c0)", "true", true},
+      {"castit(c0)", "FALSE", false},
+      {"castit(c0)", "TRUE", true},
+    });
+  }
+
+  @Test
+  public void testAscii(){
+    testFunctions(new Object[][]{
+      {" ascii('apache') ", 97},
+      {" ascii('Apache') ", 65},
+      {" ascii('अपाचे') ", -32}
+    });
+  }
+
+  @Test
   public void testTSToVarchar() throws Exception {
     testFunctions(new Object[][] {
       {"castVARCHAR(c0, c1)", ts("2019-06-26T17:20:34"), 23L, "2019-06-26 17:20:34.000"},
@@ -1426,7 +1542,6 @@ public class TestNativeFunctions extends BaseTestFunction {
     });
   }
 
-  @Ignore("DX-32437; temporarily ignoring as this function is temporarily blacklisted")
   @Test
   public void testConvertReplaceUTF8() throws Exception {
     testFunctions(new Object[][]{
