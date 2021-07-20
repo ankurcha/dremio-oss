@@ -33,9 +33,9 @@ import com.dremio.common.util.Retryer;
 import com.dremio.exec.hadoop.MayProvideAsyncStream;
 import com.dremio.exec.store.dfs.DremioFileSystemCache;
 import com.dremio.exec.store.dfs.FileSystemConf;
+import com.dremio.http.AsyncHttpClientProvider;
 import com.dremio.io.AsyncByteReader;
 import com.dremio.plugins.azure.AzureStorageConf.AccountKind;
-import com.dremio.plugins.azure.utils.AsyncHttpClientProvider;
 import com.dremio.plugins.util.ContainerFileSystem;
 
 /**
@@ -120,29 +120,27 @@ public class AzureStorageFileSystem extends ContainerFileSystem implements MayPr
     }
 
     final String[] containerList = getContainerNames(conf.get(CONTAINER_LIST));
-    if (containerList != null) {
-      containerProvider = new ProvidedContainerList(this, containerList);
+    if (accountKind == AccountKind.STORAGE_V2) {
+      containerProvider = new AzureAsyncContainerProvider(asyncHttpClient, azureEndpoint, account, authProvider, this, secure, containerList);
     } else {
-      if (accountKind == AccountKind.STORAGE_V2) {
-        containerProvider = new AzureAsyncContainerProvider(asyncHttpClient, account, authProvider, this, secure);
-      } else {
-        final String connection = String.format("%s://%s.%s", proto.getEndpointScheme(), account, azureEndpoint);
-        switch (credentialsType) {
-          case ACCESS_KEY:
-            containerProvider = new BlobContainerProvider(this, connection, account, key);
-            break;
-          case AZURE_ACTIVE_DIRECTORY:
-            try {
-              containerProvider = new BlobContainerProviderOAuth(this, connection, account, (AzureOAuthTokenProvider) authProvider);
-            } catch (Exception e) {
-              throw new IOException("Unable to establish connection to Storage V1 account with Azure Active Directory");
-            }
-            break;
-          default:
-            break;
-        }
+      final String connection = String.format("%s://%s.%s", proto.getEndpointScheme(), account, azureEndpoint);
+      switch (credentialsType) {
+        case ACCESS_KEY:
+          containerProvider = new BlobContainerProvider(this, connection, account, key, containerList);
+          break;
+        case AZURE_ACTIVE_DIRECTORY:
+          try {
+            containerProvider = new BlobContainerProviderOAuth(this, connection, account, (AzureOAuthTokenProvider) authProvider, containerList);
+          } catch (Exception e) {
+            throw new IOException("Unable to establish connection to Storage V1 account with Azure Active Directory");
+          }
+          break;
+        default:
+          break;
       }
     }
+
+    containerProvider.verfiyContainersExist();
   }
 
   private String[] getContainerNames(String value) {
@@ -227,6 +225,6 @@ public class AzureStorageFileSystem extends ContainerFileSystem implements MayPr
 
   @Override
   public AsyncByteReader getAsyncByteReader(Path path, String version) {
-    return new AzureAsyncReader(account, path, authProvider, version, secure, asyncHttpClient);
+    return new AzureAsyncReader(azureEndpoint, account, path, authProvider, version, secure, asyncHttpClient);
   }
 }

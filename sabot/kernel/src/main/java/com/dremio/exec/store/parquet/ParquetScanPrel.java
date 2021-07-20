@@ -37,6 +37,7 @@ import com.dremio.exec.record.BatchSchema;
 import com.dremio.exec.store.TableMetadata;
 import com.dremio.exec.store.dfs.PruneableScan;
 import com.dremio.options.Options;
+import com.dremio.options.TypeValidators;
 import com.dremio.options.TypeValidators.LongValidator;
 import com.dremio.options.TypeValidators.PositiveLongValidator;
 import com.google.common.base.Objects;
@@ -49,6 +50,7 @@ public class ParquetScanPrel extends ScanPrelBase implements PruneableScan {
 
   public static final LongValidator RESERVE = new PositiveLongValidator("planner.op.scan.parquet.reserve_bytes", Long.MAX_VALUE, DEFAULT_RESERVE);
   public static final LongValidator LIMIT = new PositiveLongValidator("planner.op.scan.parquet.limit_bytes", Long.MAX_VALUE, DEFAULT_LIMIT);
+  public static final TypeValidators.BooleanValidator C3_RUNTIME_AFFINITY = new TypeValidators.BooleanValidator("c3.runtime.affinity", false);
 
   private final ParquetScanFilter filter;
   private final List<GlobalDictionaryFieldInfo> globalDictionaryEncodedColumns;
@@ -123,12 +125,13 @@ public class ParquetScanPrel extends ScanPrelBase implements PruneableScan {
         filter,
         globalDictionaryEncodedColumns,
         cachedRelDataType,
-      arrowCachingEnabled);
+        arrowCachingEnabled,
+        creator.getContext().getOptions().getOption(C3_RUNTIME_AFFINITY));
   }
 
   @Override
   public ParquetScanPrel cloneWithProject(List<SchemaPath> projection) {
-    return new ParquetScanPrel(getCluster(), getTraitSet(), table, pluginId, tableMetadata, projection, observedRowcountAdjustment, filter, arrowCachingEnabled);
+    return new ParquetScanPrel(getCluster(), getTraitSet(), table, pluginId, tableMetadata, projection, observedRowcountAdjustment, filter != null ? filter.applyProjection(projection, rowType, getCluster(), getBatchSchema()) : filter, arrowCachingEnabled);
   }
 
   @Override
@@ -138,7 +141,7 @@ public class ParquetScanPrel extends ScanPrelBase implements PruneableScan {
   }
 
   @Override
-  protected double getFilterReduction(){
+  public double getFilterReduction(){
     if(filter != null){
       double selectivity = 0.15d;
 

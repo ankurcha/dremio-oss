@@ -16,6 +16,7 @@
 package com.dremio.exec.util.rhash;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,18 @@ public class RendezvousPageHasher {
 
   private static final int NUM_NODES = 3;
   private final MultiValuedRendezvousHash<PathOffset, NodeEntry> hasher;
+
+  public RendezvousPageHasher(List<NodeEndpoint> nodeEndpointList) {
+    this.hasher = new MultiValuedRendezvousHash<PathOffset, NodeEntry>(
+            Hashing.murmur3_128(),
+            (k,f) -> f.putString(k.getPath(), StandardCharsets.UTF_8).putLong(k.getOffset()),
+            (n,f) -> f.putString(n.host, StandardCharsets.UTF_8).putInt(n.fabricPort),
+            nodeEndpointList
+                    .stream()
+                    .map(n -> new NodeEntry(n))
+                    .collect(Collectors.toList())
+    );
+  }
 
   public RendezvousPageHasher(ServiceSet serviceSet) {
     this.hasher = new MultiValuedRendezvousHash<PathOffset, NodeEntry>(
@@ -53,7 +66,6 @@ public class RendezvousPageHasher {
     private final long offset;
 
     public PathOffset(String path, long offset) {
-      super();
       this.path = path;
       this.offset = offset;
     }
@@ -65,6 +77,19 @@ public class RendezvousPageHasher {
     public long getOffset() {
       return offset;
     }
+
+    @Override
+    public String toString() {
+      return "PathOffset{" +
+        "path='" + path + '\'' +
+        ", offset=" + offset +
+        '}';
+    }
+  }
+
+  public NodeEndpoint[] getEndpoints(String path, long offset) {
+    PathOffset po = new PathOffset(path, offset);
+    return hasher.get(po, NUM_NODES).stream().map(ne -> ne.endpoint).toArray(NodeEndpoint[]::new);
   }
 
   public NodeEndpoint[] getEndpoints(Path path, long offset) {

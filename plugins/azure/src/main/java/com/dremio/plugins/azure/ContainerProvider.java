@@ -26,4 +26,8 @@ interface ContainerProvider {
 
   default void assertContainerExists(final String containerName) {
   }
+
+  default void verfiyContainersExist() throws IOException {
+
+  }
 }

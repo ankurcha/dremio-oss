@@ -16,11 +16,12 @@
 
 package com.dremio.plugins.azure;
 
-import static com.dremio.plugins.azure.utils.AsyncHttpClientProvider.DEFAULT_REQUEST_TIMEOUT;
+import static com.dremio.http.AsyncHttpClientProvider.DEFAULT_REQUEST_TIMEOUT;
 import static com.dremio.plugins.azure.utils.AzureAsyncHttpClientUtils.XMS_VERSION;
 import static com.dremio.plugins.azure.utils.AzureAsyncHttpClientUtils.toHttpDateFormat;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +48,7 @@ import org.asynchttpclient.util.HttpConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.common.exceptions.UserException;
 import com.dremio.common.util.Retryer;
 import com.dremio.plugins.azure.utils.AzureAsyncHttpClientUtils;
 import com.dremio.plugins.util.ContainerAccessDeniedException;
@@ -59,6 +61,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.ImmutableList;
 
 
 /**
@@ -79,13 +82,17 @@ public class AzureAsyncContainerProvider implements ContainerProvider {
   private final AsyncHttpClient asyncHttpClient;
   private final int requestTimeoutSeconds = DEFAULT_REQUEST_TIMEOUT / 1_000;
   private final Retryer retryer;
+  private final String azureEndpoint;
+  private ImmutableList<String> whitelistedContainers = ImmutableList.of();
 
   AzureAsyncContainerProvider(final AsyncHttpClient asyncHttpClient,
+                              final String azureEndpoint,
                               final String account,
                               final AzureAuthTokenProvider authProvider,
                               final AzureStorageFileSystem parent,
-                              boolean isSecure) {
+                              boolean isSecure, final String[] containerList) {
     this.authProvider = authProvider;
+    this.azureEndpoint = azureEndpoint;
     this.parent = parent;
     this.account = account;
     this.isSecure = isSecure;
@@ -94,13 +101,31 @@ public class AzureAsyncContainerProvider implements ContainerProvider {
       .retryIfExceptionOfType(RuntimeException.class)
       .setWaitStrategy(Retryer.WaitStrategy.EXPONENTIAL, BASE_MILLIS_TO_WAIT, MAX_MILLIS_TO_WAIT)
       .setMaxRetries(10).build();
+    if(containerList != null) {
+      this.whitelistedContainers = ImmutableList.copyOf(containerList);
+    }
+  }
+
+  AzureAsyncContainerProvider(final AsyncHttpClient asyncHttpClient,
+                              final String azureEndpoint,
+                              final String account,
+                              final AzureAuthTokenProvider authProvider,
+                              final AzureStorageFileSystem parent,
+                              boolean isSecure) {
+    this(asyncHttpClient, azureEndpoint, account, authProvider, parent, isSecure, null);
   }
 
   @Override
   public Stream<ContainerFileSystem.ContainerCreator> getContainerCreators() {
-    Iterator<String> containerIterator = new DFSContainerIterator(asyncHttpClient, account, authProvider, isSecure, retryer);
-    return StreamSupport.stream(Spliterators.spliteratorUnknownSize(containerIterator, Spliterator.ORDERED), false)
-      .map(c -> new AzureStorageFileSystem.ContainerCreatorImpl(parent, c));
+    if(whitelistedContainers.isEmpty()) {
+      Iterator<String> containerIterator = new DFSContainerIterator(asyncHttpClient, azureEndpoint, account, authProvider, isSecure, retryer);
+      return StreamSupport.stream(Spliterators.spliteratorUnknownSize(containerIterator, Spliterator.ORDERED), false)
+        .map(c -> new AzureStorageFileSystem.ContainerCreatorImpl(parent, c));
+    } else {
+      return whitelistedContainers.stream().map(c -> {
+        return new AzureStorageFileSystem.ContainerCreatorImpl(parent, c);
+      });
+    }
   }
 
   @Override
@@ -112,7 +137,7 @@ public class AzureAsyncContainerProvider implements ContainerProvider {
       .addHeader("x-ms-version", XMS_VERSION)
       .addHeader("Content-Length", 0)
       .addHeader("x-ms-client-request-id", UUID.randomUUID().toString())
-      .setUrl(AzureAsyncHttpClientUtils.getBaseEndpointURL(account, true) + "/" + containerName)
+      .setUrl(AzureAsyncHttpClientUtils.getBaseEndpointURL(azureEndpoint, account, true) + "/" + containerName)
       .addQueryParam("resource", "filesystem")
       .addQueryParam("timeout", String.valueOf(requestTimeoutSeconds)).build();
 
@@ -137,6 +162,21 @@ public class AzureAsyncContainerProvider implements ContainerProvider {
     });
   }
 
+  @Override
+  public void verfiyContainersExist() throws IOException {
+    List<String> list = whitelistedContainers.asList();
+    for (String c : list) {
+      try {
+        logger.debug("Exists validation for whitelisted azure container " + account + ":" + c);
+        assertContainerExists(c);
+      } catch (Retryer.OperationFailedAfterRetriesException e) {
+        throw UserException.validationError()
+          .message(String.format("Failure while validating existence of container %s. Error %s", c, e.getCause().getMessage()))
+          .build();
+      }
+    }
+  }
+
   static class DFSContainerIterator extends AbstractIterator<String> {
     private static final int EMPTY_CONTINUATION_RETRIES = 10;  // Approx no of rows shown on dremio console
     private static final int PAGE_SIZE = 100;
@@ -152,13 +192,14 @@ public class AzureAsyncContainerProvider implements ContainerProvider {
     private Iterator<String> iterator = Collections.emptyIterator();
 
     DFSContainerIterator(final AsyncHttpClient asyncHttpClient,
+                         final String azureEndpoint,
                          final String account,
                          final AzureAuthTokenProvider authProvider,
                          final boolean isSecure,
                          final Retryer retryer) {
       this.authProvider = authProvider;
       this.asyncHttpClient = asyncHttpClient;
-      this.uri = AzureAsyncHttpClientUtils.getBaseEndpointURL(account, isSecure);
+      this.uri = AzureAsyncHttpClientUtils.getBaseEndpointURL(azureEndpoint, account, isSecure);
       this.retryer = retryer;
     }
 
