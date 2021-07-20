@@ -68,8 +68,7 @@ public class ModFunctions {
   @FunctionTemplate(name = "pmod", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
   public static class PmodInt implements SimpleFunction {
 
-    @Param
-    BigIntHolder input1;
+    @Param BigIntHolder input1;
     @Param IntHolder input2;
     @Output IntHolder out;
 
