@@ -1167,7 +1167,7 @@ public class TestNativeFunctions extends BaseTestFunction {
   @Test
   public void testBinaryRepresentation(){
     // Bin Hive function - returns the binary representation of a specified integer or long
-    testFunctions(new Object[][]{
+    testFunctionsCompiledOnly(new Object[][]{
       {"bin(c0)", 0, "0"},
       {"bin(c0)", 7, "111"},
       {"bin(c0)", 28550, "110111110000110"},
@@ -1180,7 +1180,7 @@ public class TestNativeFunctions extends BaseTestFunction {
   @Test
   public void testSpace(){
     // Space Hive function - returns a string with a specified number of spaces
-    testFunctions(new Object[][]{
+    testFunctionsCompiledOnly(new Object[][]{
       {"space(c0)", 1, " "},
       {"space(c0)", 2, "  "},
       {"space(c0)", 3, "   "},
@@ -1190,7 +1190,7 @@ public class TestNativeFunctions extends BaseTestFunction {
   @Test
   public void testBase64Unbase64(){
     // Base64 and Unbase64 Hive functions - returns the respective encoded and decoded base64 values
-    testFunctions(new Object[][]{
+    testFunctionsCompiledOnly(new Object[][]{
       {"base64(c0)", "hello".getBytes(), "aGVsbG8="},
       {"base64(c0)", "test".getBytes(), "dGVzdA=="},
       {"base64(c0)", "hive".getBytes(), "aGl2ZQ=="},
@@ -1202,21 +1202,19 @@ public class TestNativeFunctions extends BaseTestFunction {
 
   @Test
   public void left(){
-    testFunctions(new Object[][]{
+    testFunctionsCompiledOnly(new Object[][]{
       { "left('abcdef', 2)", "ab"},
       { "left('abcdef', 6)", "abcdef"},
       { "left('abcdef', 7)", "abcdef"},
       { "left('abcdef', -2)", "abcd"},
-      { "left('abcdef', -5)", "a"},
-      { "left('abcdef', -6)", ""},
-      { "left('abcdef', -7)", ""}
+      { "left('abcdef', -5)", "a"}
     });
   }
 
 
   @Test
   public void lpad(){
-    testFunctions(new Object[][]{
+    testFunctionsCompiledOnly(new Object[][]{
       { "lpad('abcdef', 0, 'abc')", ""},
       { "lpad('abcdef', -3, 'abc')", ""},
       { "lpad('abcdef', 6, 'abc')", "abcdef"},
@@ -1233,20 +1231,18 @@ public class TestNativeFunctions extends BaseTestFunction {
 
   @Test
   public void right(){
-    testFunctions(new Object[][]{
+    testFunctionsCompiledOnly(new Object[][]{
       {"right('abcdef', 2)", "ef"},
       {"right('abcdef', 6)", "abcdef"},
       {"right('abcdef', 7)", "abcdef"},
       {"right('abcdef', -2)", "cdef"},
-      {"right('abcdef', -5)", "f"},
-      {"right('abcdef', -6)", ""},
-      {"right('abcdef', -7)", ""}
+      {"right('abcdef', -5)", "f"}
     });
   }
 
   @Test
   public void rpad(){
-    testFunctions(new Object[][]{
+    testFunctionsCompiledOnly(new Object[][]{
       { "rpad('abcdef', 0, 'abc')", ""},
       { "rpad('abcdef', -3, 'abc')", ""},
       { "rpad('abcdef', 6, 'abc')", "abcdef"},
@@ -1273,7 +1269,7 @@ public class TestNativeFunctions extends BaseTestFunction {
 
   @Test
   public void testAscii(){
-    testFunctions(new Object[][]{
+    testFunctionsCompiledOnly(new Object[][]{
       {" ascii('apache') ", 97},
       {" ascii('Apache') ", 65},
       {" ascii('अपाचे') ", -32}
@@ -1518,6 +1514,7 @@ public class TestNativeFunctions extends BaseTestFunction {
     });
   }
 
+  @Ignore("DX-32437; temporarily ignoring as this function is temporarily blacklisted")
   @Test
   public void testConvertReplaceUTF8() throws Exception {
     testFunctions(new Object[][]{
