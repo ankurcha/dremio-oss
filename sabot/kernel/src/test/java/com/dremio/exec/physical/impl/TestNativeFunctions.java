@@ -1264,10 +1264,10 @@ public class TestNativeFunctions extends BaseTestFunction {
   @Test
   public void testCastBit() throws Exception {
     testFunctions(new Object[][] {
-      {"castit(c0)", "false", false},
-      {"castit(c0)", "true", true},
-      {"castit(c0)", "FALSE", false},
-      {"castit(c0)", "TRUE", true},
+      {"castbit(c0)", "false", false},
+      {"castbit(c0)", "true", true},
+      {"castbit(c0)", "FALSE", false},
+      {"castbit(c0)", "TRUE", true},
     });
   }
 
