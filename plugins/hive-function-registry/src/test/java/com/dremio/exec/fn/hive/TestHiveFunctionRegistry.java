@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2017-2019 Dremio Corporation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.dremio.exec.fn.hive;
 
 import com.dremio.exec.expr.fn.AbstractFunctionHolder;
@@ -41,7 +56,7 @@ public class TestHiveFunctionRegistry extends DremioTest {
     }
 
     // Retrieve methods on Hive Function Registry
-    HiveFunctionRegistry registry = new HiveFunctionRegistry(DEFAULT_SABOT_CONFIG);
+    HiveFunctionRegistry registry = new HiveFunctionRegistry(CLASSPATH_SCAN_RESULT);
     ArrayListMultimap<String, Class<? extends UDF>> methodsUDF = registry.getMethodsUDF();
     ArrayListMultimap<String, Class<? extends GenericUDF>> methodsGenericUDF = registry.getMethodsGenericUDF();
 

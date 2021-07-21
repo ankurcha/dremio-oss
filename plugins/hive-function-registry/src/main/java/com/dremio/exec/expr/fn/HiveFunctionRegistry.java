@@ -219,11 +219,11 @@ public class HiveFunctionRegistry implements PluggableFunctionRegistry {
     return null;
   }
 
-  ArrayListMultimap<String, Class<? extends GenericUDF>> getMethodsGenericUDF() {
+  public ArrayListMultimap<String, Class<? extends GenericUDF>> getMethodsGenericUDF() {
     return methodsGenericUDF;
   }
 
-  ArrayListMultimap<String, Class<? extends UDF>> getMethodsUDF() {
+  public ArrayListMultimap<String, Class<? extends UDF>> getMethodsUDF() {
     return methodsUDF;
   }
 }
