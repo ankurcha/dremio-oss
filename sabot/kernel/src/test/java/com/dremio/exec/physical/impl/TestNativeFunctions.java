@@ -974,30 +974,6 @@ public class TestNativeFunctions extends BaseTestFunction {
   }
 
   @Test
-  public void testCastMillisToVarchar() throws Exception {
-    testFunctions(new Object[][]{
-      {"castVARCHAR(cast(c0 as DATE), c1)", ts("1970-01-12T10:20:33"), 10L, "1970-01-12"},
-      {"castVARCHAR(cast(c0 as DATE), c1)", ts("1970-01-12T10:20:33"), 30L, "1970-01-12"},
-      {"castVARCHAR(cast(c0 as DATE), c1)", ts("1970-01-12T10:20:33"), 8L, "1970-01-"},
-      {"castVARCHAR(cast(c0 as DATE), c1)", ts("1985-12-12T10:20:33"), 10L, "1985-12-12"},
-      {"castVARCHAR(cast(c0 as DATE), c1)", ts("1985-12-12T10:20:33"), 0L, ""},
-    });
-  }
-
-  @Test(expected = RuntimeException.class)
-  public void testCastMillisToVarcharNegativeLength() throws Exception {
-    try {
-      testFunctions(new Object[][]{
-        {"castVARCHAR(cast(c0 as DATE), c1)", ts("1985-12-12T10:20:33"), -10L, ""}
-      });
-    } catch (RuntimeException re) {
-      Assert.assertTrue(re.getCause().getCause().getMessage()
-      .contains("Buffer length can not be negative"));
-      throw re;
-    }
-  }
-
-  @Test
   public void testSplitPart() throws Exception {
     testFunctions(new Object[][]{
       { "split_part(c0, c1, c2)", "abc~@~def~@~ghi", "~@~", 1, "abc"},
@@ -1594,103 +1570,6 @@ public class TestNativeFunctions extends BaseTestFunction {
       {"initcap(c0)", "low up", "Low Up"},
       {"initcap(c0)", "all Must be Capitlized", "All Must Be Capitlized"},
       {"initcap(c0)", NULL_VARCHAR, NULL_VARCHAR},
-    });
-  }
-
-  @Test
-  public void testCastInt() throws Exception {
-    testFunctions(new Object[][]{
-      {"castINT(c0)", "\\x30", 0},
-      {"castINT(c0)", "\\x2D\\x30", 0},
-      {"castINT(c0)", "\\x35", 5},
-      {"castINT(c0)", "\\x36\\x39", 69},
-      {"castINT(c0)", "\\x2D\\x30", -5},
-      {"castINT(c0)", "\\x2D\\x36\\x39", -69},
-      {"castINT(c0))", "\\x32\\x31\\x34\\x37\\x34\\x38\\x33\\x36\\x34\\x37", Integer.MAX_VALUE},
-      {"castINT(c0))", "\\x2D\\x32\\x31\\x34\\x37\\x34\\x38\\x33\\x36\\x34\\x38", Integer.MIN_VALUE},
-    });
-  }
-
-  @Test
-  public void testCastBigInt() throws Exception {
-    testFunctions(new Object[][]{
-      {"castBIGINT(c0)", "\\x30", 0l},
-      {"castBIGINT(c0)", "\\x2D\\x30", 0l},
-      {"castBIGINT(c0)", "\\x35", 5l},
-      {"castBIGINT(c0)", "\\x36\\x39", 69l},
-      {"castBIGINT(c0)", "\\x2D\\x30", -5l},
-      {"castBIGINT(c0)", "\\x2D\\x36\\x39", -69l},
-      {"castBIGINT(c0))", "\\x39\\x32\\x32\\x33\\x33\\x37\\x32\\\\x30\\x33\\x36\\x38\\x35\\x34\\x37\\x37\\x35\\x38\\x30\\x37", Long.MAX_VALUE},
-      {"castBIGINT(c0))", "\\x2D\\x39\\x32\\x32\\x33\\x33\\x37\\x32\\\\x30\\x33\\x36\\x38\\x35\\x34\\x37\\x37\\x35\\x38\\x30\\x38", Long.MIN_VALUE},
-    });
-  }
-
-  @Test
-  public void testCastFloat() throws Exception {
-    testFunctions(new Object[][]{
-      {"castFLOAT4(c0)", "\\x30", 0.0f},
-      {"castFLOAT4(c0)", "\\x2D\\x30\\x2E\\x30", 0.0f},
-      {"castFLOAT4(c0)", "\\x35\\x2E\\x36", 5.6f},
-      {"castFLOAT4(c0)", "\\x36\\x39\\x2E\\x35", 69.5f},
-      {"castFLOAT4(c0)", "\\x2D\\x36\\x39\\x2E\\x35", -69.5f},
-    });
-  }
-
-  @Test
-  public void testCastDouble() throws Exception {
-    testFunctions(new Object[][]{
-      {"castFLOAT8(c0)", "\\x30", 0.0},
-      {"castFLOAT8(c0)", "\\x2D\\x30\\x2E\\x30", 0.0},
-      {"castFLOAT8(c0)", "\\x35\\x2E\\x36", 5.6},
-      {"castFLOAT8(c0)", "\\x36\\x39\\x2E\\x35", 69.5},
-      {"castFLOAT8(c0)", "\\x2D\\x36\\x39\\x2E\\x35", -69.5},
-    });
-  }
-
-
-
-  @Test
-  public void testIlike() throws Exception {
-
-    testFunctions(new Object[][]{
-      {"ilike(c0, '%SuPer%')", "superb", true},
-      {"ilike(c0, '%SuPer%')", "awesome superb", true},
-      {"ilike(c0, '%SuPer%')", "suppr", false},
-      {"ilike(c0, '%SuPer%')", NULL_VARCHAR, NULL_BOOLEAN},
-
-      {"ilike(c0, 'ArM_')", "arm", false},
-      {"like(c0, 'ArM_')", "army", true},
-      {"like(c0, 'ArM_')", "armies", false},
-    });
-  }
-
-  @Test
-  public void testUpper() throws Exception {
-    testFunctions(new Object[][]{
-      {"upper(c0)", "all", "ALL"},
-      {"upper(c0)", "lowUP", "LOWUP"},
-      {"upper(c0)", "alMoST aLl LoWer", "ALMOST ALL LOWER"},
-      {"upper(c0)", null, null},
-    });
-  }
-
-  @Test
-  public void testLower() throws Exception {
-    testFunctions(new Object[][]{
-      {"lower(c0)", "ALL", "all"},
-      {"lower(c0)", "lowUP", "lowup"},
-      {"lower(c0)", "alMoST aLl LoWer", "almost all lower"},
-      {"lower(c0)", null, null},
-    });
-  }
-
-  @Test
-  public void testInitCap() throws Exception {
-    testFunctions(new Object[][]{
-      {"initcap(c0)", "all", "All"},
-      {"initcap(c0)", "low up", "Low Up"},
-      {"initcap(c0)", "alL musT be capitilizeD", "AlL MusT Be CapitlizeD"},
-      {"initcap(c0)", null, null},
     });
   }
 
