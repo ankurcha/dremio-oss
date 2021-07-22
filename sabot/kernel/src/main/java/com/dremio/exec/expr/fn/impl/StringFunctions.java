@@ -1879,7 +1879,7 @@ public class StringFunctions{
 
     @Override
     public void eval() {
-      byte[] buf = Long.toBinaryString(in.value).getBytes();
+      byte[] buf = Integer.toBinaryString(in.value).getBytes();
       buffer.setBytes(0, buf);
 
       out.start = 0;
