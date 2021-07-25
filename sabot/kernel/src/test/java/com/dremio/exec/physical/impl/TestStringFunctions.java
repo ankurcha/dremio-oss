@@ -343,4 +343,17 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void testBinaryRepresentation(){
+    // Bin Hive function - returns the binary representation of a specified integer or long
+    testFunctions(new Object[][]{
+      {"bin(c0)", 0, "0"},
+      {"bin(c0)", 7, "111"},
+      {"bin(c0)", 28550, "110111110000110"},
+      {"bin(c0)", -28550, "11111111111111111001000001111010"},
+      {"bin(c0)", Long.MAX_VALUE, "111111111111111111111111111111111111111111111111111111111111111"},
+      {"bin(c0)", Long.MIN_VALUE, "1000000000000000000000000000000000000000000000000000000000000000"},
+    });
+  }
+
 }
