@@ -343,4 +343,15 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void testCrc32(){
+    testFunctions(new Object[][]{
+      {"crc32(c0)", "ABC", 2743272264L},
+      {"crc32(c0)", "Hello", 4157704578L},
+      {"crc32(c0)", "hive", 3698179064L},
+      {"crc32(c0)", "372189372123", 2607335846L},
+      {"crc32(c0)", "", 0L},
+    });
+  }
+
 }
