@@ -556,20 +556,9 @@ public class StringFunctions{
 
     @Override
     public void eval() {
-      out.buffer = buffer = buffer.reallocIfNeeded(input.end- input.start);
-      out.start = 0;
-      out.end = input.end - input.start;
-
-      for (int id = input.start; id < input.end; id++) {
-        byte  currentByte = input.buffer.getByte(id);
-
-        // 'A - Z' : 0x41 - 0x5A
-        // 'a - z' : 0x61 - 0x7A
-        if (currentByte >= 0x41 && currentByte <= 0x5A) {
-          currentByte += 0x20;
-        }
-        out.buffer.setByte(id - input.start, currentByte) ;
-      }
+      out.buffer = buffer = buffer.reallocIfNeeded(out.end);
+      final String s = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(input.start, input.end, input.buffer);
+      out.buffer.setBytes(0, s.toLowerCase().getBytes());
     }
   }
 
@@ -589,20 +578,9 @@ public class StringFunctions{
 
     @Override
     public void eval() {
-      out.buffer = buffer = buffer.reallocIfNeeded(input.end- input.start);
-      out.start = 0;
-      out.end = input.end - input.start;
-
-      for (int id = input.start; id < input.end; id++) {
-        byte currentByte = input.buffer.getByte(id);
-
-        // 'A - Z' : 0x41 - 0x5A
-        // 'a - z' : 0x61 - 0x7A
-        if (currentByte >= 0x61 && currentByte <= 0x7A) {
-          currentByte -= 0x20;
-        }
-        out.buffer.setByte(id - input.start, currentByte) ;
-      }
+      out.buffer = buffer = buffer.reallocIfNeeded(out.end);
+      final String s = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(input.start, input.end, input.buffer);
+      out.buffer.setBytes(0, s.toUpperCase().getBytes());
     }
   }
 

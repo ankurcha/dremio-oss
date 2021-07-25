@@ -180,7 +180,9 @@ public class TestStringFunctions extends BaseTestFunction {
     testFunctions(new Object[][]{
       { "lower('ABcEFgh')", "abcefgh"},
       { "lower('aBc')", "abc"},
-      { "lower('')", ""}
+      { "lower('')", ""},
+      { "lower('')", ""},
+      { "lower('ÂbĆDËFgh')", "âbćdëfgh"}
     });
   }
 
@@ -319,7 +321,9 @@ public class TestStringFunctions extends BaseTestFunction {
     testFunctions(new Object[][]{
       { "upper('ABcEFgh')", "ABCEFGH"},
       { "upper('aBc')", "ABC"},
-      { "upper('')", ""}
+      { "upper('')", ""},
+      { "upper('')", ""},
+      { "upper('âBćDëFGH')", "ÂBĆDËFGH"}
     });
   }
 
