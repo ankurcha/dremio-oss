@@ -343,4 +343,14 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void testSpace(){
+    // Space Hive function - returns a string with a specified number of spaces
+    testFunctions(new Object[][]{
+      {"space(c0)", 1, " "},
+      {"space(c0)", 2, "  "},
+      {"space(c0)", 3, "   "},
+    });
+  }
+
 }

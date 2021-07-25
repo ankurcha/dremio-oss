@@ -1717,4 +1717,29 @@ public class StringFunctions{
       out.end = outBytea.length;
     }
   }
+
+  /**
+   * Returns a string with the specified number of spaces.
+   */
+  @FunctionTemplate(names = {"space"}, scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class Space implements SimpleFunction {
+
+    @Param IntHolder in;
+    @Output VarCharHolder out;
+    @Inject ArrowBuf buffer;
+
+    @Override
+    public void setup() {
+    }
+
+    @Override
+    public void eval() {
+      byte[] buf = String.format("%-" + in.value + "s", "").getBytes();
+      buffer.setBytes(0, buf);
+
+      out.start = 0;
+      out.end = buf.length;
+      out.buffer = buffer;
+    }
+  }
 }
