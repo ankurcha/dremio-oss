@@ -343,4 +343,13 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void testRegexpExtract() {
+    testFunctions(new Object[][]{
+      {"regexp_extract(c0, 'foo(.*?)(bar)', 2)", "foothebar", "bar"},
+      {"regexp_extract(c0, '@(.*)', 0)", "john@test.com", "@test.com"},
+      {"regexp_extract(c0, '(.*) (D.*)', 2)", "John Doe", "Doe"},
+    });
+  }
+
 }
