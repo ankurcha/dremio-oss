@@ -343,4 +343,15 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void testFindInSet(){
+    // FIND_IN_SET Hive function which returns the position of a string in a set of strings separated by comma
+    testFunctions(new Object[][]{
+      {"find_in_set(c0, c1)", "A", "A,B,C", 1},
+      {"find_in_set(c0, c1)", "", "A,B,C,", 4},
+      {"find_in_set(c0, c1)", "", ",A,B,C,", 1},
+      {"find_in_set(c0, c1)", "", "A,B,,C,", 3}
+    });
+  }
+
 }
