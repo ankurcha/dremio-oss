@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 
 import javax.inject.Inject;
 
+import com.jayway.jsonpath.JsonPath;
 import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.vector.holders.BigIntHolder;
 import org.apache.arrow.vector.holders.BitHolder;
@@ -1715,6 +1716,39 @@ public class StringFunctions{
       out.buffer.setBytes(0, outBytea);
       out.start = 0;
       out.end = outBytea.length;
+    }
+  }
+
+  /**
+   * Returns the result of a search on a json based on the jsonpath string.
+   */
+  @FunctionTemplate(names = {"get_json_object"}, scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class GetJsonObject implements SimpleFunction {
+
+    @Param VarCharHolder json;
+    @Param VarCharHolder search;
+    @Output VarCharHolder out;
+    @Inject ArrowBuf buffer;
+
+    @Override
+    public void setup() {
+    }
+
+    @Override
+    public void eval() {
+      String search_str = getStringFromVarCharHolder(search);
+
+      String json_str = getStringFromVarCharHolder(json);
+
+      Object result = JsonPath.parse(json_str).read(search_str);
+      String result_str = result.toString();
+
+      byte[] resultBuf = result_str.getBytes();
+      buffer.setBytes(0, resultBuf);
+
+      out.start = 0;
+      out.end = resultBuf.length;
+      out.buffer = buffer;
     }
   }
 }
