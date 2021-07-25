@@ -343,4 +343,17 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void testBase64Unbase64(){
+    // Base64 and Unbase64 Hive functions - returns the respective encoded and decoded base64 values
+    testFunctions(new Object[][]{
+      {"base64(c0)", "hello".getBytes(), "aGVsbG8="},
+      {"base64(c0)", "test".getBytes(), "dGVzdA=="},
+      {"base64(c0)", "hive".getBytes(), "aGl2ZQ=="},
+      {"unbase64(c0)", "aGVsbG8=", "hello".getBytes()},
+      {"unbase64(c0)", "dGVzdA==", "test".getBytes()},
+      {"unbase64(c0)", "aGl2ZQ==", "hive".getBytes()},
+    });
+  }
+
 }
