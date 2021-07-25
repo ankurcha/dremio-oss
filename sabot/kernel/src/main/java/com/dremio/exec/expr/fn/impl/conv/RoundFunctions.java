@@ -27,6 +27,8 @@ import com.dremio.exec.expr.annotations.FunctionTemplate.NullHandling;
 import com.dremio.exec.expr.annotations.Output;
 import com.dremio.exec.expr.annotations.Param;
 
+import java.math.RoundingMode;
+
 
 public class RoundFunctions {
 
@@ -91,6 +93,64 @@ public class RoundFunctions {
     public void eval() {
       java.math.BigDecimal input = java.math.BigDecimal.valueOf(in.value);
       out.value = input.setScale(0, java.math.RoundingMode.HALF_UP).doubleValue();
+    }
+  }
+
+  @FunctionTemplate(name = "bround", scope = FunctionScope.SIMPLE, nulls = FunctionTemplate.NullHandling.NULL_IF_NULL)
+  public static class BRoundInt implements SimpleFunction {
+
+    @Param  IntHolder in;
+    @Output IntHolder out;
+
+    public void setup() {
+    }
+
+    public void eval() {
+      out.value = in.value;
+    }
+  }
+
+  @FunctionTemplate(name = "bround", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class BRoundBigInt implements SimpleFunction {
+
+    @Param BigIntHolder in;
+    @Output BigIntHolder out;
+
+    public void setup() {
+    }
+
+    public void eval() {
+      out.value = in.value;
+    }
+  }
+
+  @FunctionTemplate(name = "bround", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class BRoundFloat4 implements SimpleFunction {
+
+    @Param Float4Holder in;
+    @Output Float4Holder out;
+
+    public void setup() {
+    }
+
+    public void eval() {
+      java.math.BigDecimal input = java.math.BigDecimal.valueOf(in.value);
+      out.value = input.setScale(0, java.math.RoundingMode.HALF_EVEN).floatValue();
+    }
+  }
+
+  @FunctionTemplate(name = "bround", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class BRoundFloat8 implements SimpleFunction {
+
+    @Param Float8Holder in;
+    @Output Float8Holder out;
+
+    public void setup() {
+    }
+
+    public void eval() {
+      java.math.BigDecimal input = java.math.BigDecimal.valueOf(in.value);
+      out.value = input.setScale(0, RoundingMode.HALF_EVEN).doubleValue();
     }
   }
 }
