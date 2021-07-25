@@ -18,6 +18,8 @@ package com.dremio.exec.expr.fn.impl;
 import static com.dremio.exec.expr.fn.impl.StringFunctionHelpers.getStringFromVarCharHolder;
 
 import java.nio.charset.Charset;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
@@ -1715,6 +1717,87 @@ public class StringFunctions{
       out.buffer.setBytes(0, outBytea);
       out.start = 0;
       out.end = outBytea.length;
+    }
+  }
+
+  @FunctionTemplate(name = "parse_url", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class ParseURL implements SimpleFunction{
+    @Param VarCharHolder   in;
+    @Param(constant = true) VarCharHolder   partToExtract;
+    @Output NullableVarCharHolder   out;
+    @Inject ArrowBuf buffer;
+
+    @Inject FunctionErrorContext errCtx;
+
+    @Workspace String urlPart;
+
+    @Override
+    public void setup() {
+      urlPart = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(partToExtract.start,
+        partToExtract.end, partToExtract.buffer);
+    }
+
+    @Override
+    public void eval() {
+      String url = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(in.start, in.end, in.buffer);
+      Optional<String> extractPart = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.parseURL(url, urlPart, errCtx);
+
+      extractPart.ifPresent(val ->{
+        out.isSet = 1;
+        byte[] buf = val.getBytes();
+        buffer.setBytes(0, buf);
+
+        out.start = 0;
+        out.end = buf.length;
+        out.buffer = buffer;
+      });
+    }
+  }
+
+  @FunctionTemplate(name = "parse_url", scope = FunctionScope.SIMPLE, nulls = NullHandling.INTERNAL)
+  public static class ParseURLQueryKey implements SimpleFunction{
+    @Param VarCharHolder   in;
+    @Param(constant = true) VarCharHolder   partToExtract;
+    @Param VarCharHolder   queryKey;
+    @Output NullableVarCharHolder   out;
+    @Inject ArrowBuf buffer;
+    @Inject FunctionErrorContext errCtx;
+
+    @Workspace String urlPart;
+    @Workspace String lastKey;
+    @Workspace Pattern pattern;
+
+    @Override
+    public void setup() {
+      lastKey = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(queryKey.start, queryKey.end,
+        queryKey.buffer);
+      pattern = Pattern.compile("(&|^)" + lastKey + "=([^&]*)");
+      urlPart = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(partToExtract.start,
+        partToExtract.end, partToExtract.buffer);
+    }
+
+    @Override
+    public void eval() {
+      // Compiles pattern for the key given.
+      String key = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(queryKey.start, queryKey.end,
+        queryKey.buffer);
+      if (!key.equals(lastKey)) {
+        pattern = Pattern.compile("(&|^)" + key + "=([^&]*)");
+      }
+      lastKey = key;
+
+      String url = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(in.start, in.end, in.buffer);
+      Optional<String> extractValue = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.parseURLQueryKey(url, urlPart,
+        pattern, errCtx);
+      extractValue.ifPresent(val ->{
+        out.isSet = 1;
+        byte[] buf = val.getBytes();
+        buffer.setBytes(0, buf);
+
+        out.start = 0;
+        out.end = buf.length;
+        out.buffer = buffer;
+      });
     }
   }
 }

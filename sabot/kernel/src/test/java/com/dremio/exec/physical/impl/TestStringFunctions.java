@@ -343,4 +343,23 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void parseUrl(){
+    testFunctions(new Object[][]{
+      {"parse_url('http://facebook.com/path/p1.php?query=1', 'PROTOCOL')", "http"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1', 'HOST')", "facebook.com"},
+      {"parse_url('http://127.0.0.0:8080/path/p1.php?query=1', 'HOST')", "127.0.0.0"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1', 'AUTHORITY')", "facebook.com"},
+      {"parse_url('http://127.0.0.0:8080/path/p1.php?query=1', 'AUTHORITY')", "127.0.0.0:8080"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1#ref', 'REF')", "ref"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1', 'QUERY')", "query=1"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1', 'QUERY', 'query')", "1"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1&k1=v1', 'QUERY', 'query')", "1"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1&k1=v1', 'QUERY', 'k1')", "v1"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1', 'FILE')", "/path/p1.php?query=1"},
+      {"parse_url('http://facebook.com/path/p1.php?query=1', 'PATH')", "/path/p1.php"},
+      {"parse_url('http://userinfo@facebook.com/path/p1.php?query=1', 'USERINFO')", "userinfo"},
+    });
+  }
+
 }
