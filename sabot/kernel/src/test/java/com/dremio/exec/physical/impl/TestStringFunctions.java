@@ -343,4 +343,15 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void levenshtein(){
+    testFunctions(new Object[][]{
+      { "levenshtein('test', 'task')", 2},
+      { "levenshtein('kitten', 'sitting')", 3},
+      { "levenshtein('', 'a')", 1},
+      { "levenshtein('cat', 'coat')", 1},
+      { "levenshtein('book', 'back')", 2}
+    });
+  }
+
 }

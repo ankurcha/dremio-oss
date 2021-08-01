@@ -1717,4 +1717,37 @@ public class StringFunctions{
       out.end = outBytea.length;
     }
   }
+
+  /**
+   * Calculates the levenshtein distance of given strings.
+   */
+  @FunctionTemplate(name = "levenshtein", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class Levenshtein implements SimpleFunction {
+    @Param  VarCharHolder in1;
+    @Param  VarCharHolder in2;
+    @Output IntHolder out;
+
+    @Override
+    public void setup() {}
+
+    @Override
+    public void eval() {
+      int len1 = in1.end - in1.start;
+      int len2 = in2.end - in2.start;
+      // dist[i][j] represents the Levenstein distance between the strings
+      int[][] dist = new int[len1 + 1][len2 + 1];
+      for (int i = 0; i <= len1; i++) dist[i][0] = i;
+      for (int j = 1; j <= len2; j++) dist[0][j] = j;
+      for (int j = 0; j < len2; j++) {
+        for (int i = 0; i < len1; i++) {
+          if(in1.buffer.getByte(i) == in2.buffer.getByte(j)) {
+            dist[i + 1][j + 1] = dist[i][j];
+          } else {
+            dist[i + 1][j + 1] = Math.min(Math.min(dist[i][j + 1] + 1, dist[i + 1][j] + 1), dist[i][j] + 1);
+          }
+        }
+      }
+      out.value = dist[len1][len2];
+    }
+  }
 }
