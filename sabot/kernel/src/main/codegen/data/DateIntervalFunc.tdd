@@ -25,4 +25,5 @@
     {timestampAddUnitsTypes : [Int, BigInt]}
     {timestampAddUnits : [MicroSecond, Second, Minute, Hour, Day, Week, Month, Quarter, Year] }
     {timestampDiffUnits : [MicroSecond, Second, Minute, Hour, Day, Week, Month, Quarter, Year] }
+    {dateformatTypes : ["DateMilli", "TimeStampMilli", "TimeMilli", "Varchar", "Varbinary"] }
 }
