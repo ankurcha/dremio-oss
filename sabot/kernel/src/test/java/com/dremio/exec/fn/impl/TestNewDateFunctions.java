@@ -422,6 +422,24 @@ public class TestNewDateFunctions extends BaseTestQuery {
   }
 
   @Test
+  public void testDateFormatFunction() throws Exception {
+    testBuilder()
+      .sqlQuery("SELECT " +
+        " date_format('2008-03-15', 'YY-MM-dd') AS VAL1," +
+        " date_format(to_time('13a:44:33', 'hh24:mi:ss', 1),'yyyy-mm-dd H24:mi:ss') AS VAL2," +
+        " date_format(to_timestamp('1970-01-01 21:44:33', 'YYYY-MM-DD hh24:mi:ss'), 'YYYY-MM-DD') AS VAL3," +
+        " FROM sys.version"
+      ).unOrdered()
+      .baselineColumns("VAL1", "VAL2", "VAL3")
+      .baselineValues(
+        "2008-03-15",
+        "0000-00-00 13:44:33",
+        "1970-01-01 13:44:33"
+        )
+      .go();
+  }
+
+  @Test
   public void testDateSubFunction() throws Exception {
     testBuilder()
       .sqlQuery("SELECT " +
