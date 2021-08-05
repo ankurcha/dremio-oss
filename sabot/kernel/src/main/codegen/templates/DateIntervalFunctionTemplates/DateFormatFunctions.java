@@ -20,7 +20,7 @@ import com.dremio.exec.expr.annotations.Workspace;
 
 <#list dateIntervalFunc.dateformatTypes as type>
 
-<@pp.changeOutputFile name="/com/dremio/exec/expr/fn/impl/DateFormatFrom.java" />
+<@pp.changeOutputFile name="/com/dremio/exec/expr/fn/impl/DateFormatFrom${type}.java" />
 
 <#include "/@includes/license.ftl" />
 
@@ -74,12 +74,12 @@ public class DateFormatFrom${type} implements SimpleFunction {
     }
 
     public void eval() {
-        <#if type == "Varchar">
+        <#if type == "VarChar">
         // Get the desired output format and create a DateTimeFormatter
         byte[] dateBuf = new byte[right.end - right.start];
-        right.buffer.getBytes(right.start, buf, 0, right.end - right.start);
-        String input = new String(buf, com.google.common.base.Charsets.UTF_8);
-        long value com.dremio.exec.expr.fn.impl.DateFunctionsUtils.formatDateMilli(input, format, errCtx);
+        right.buffer.getBytes(right.start, dateBuf, 0, right.end - right.start);
+        String input = new String(dateBuf, com.google.common.base.Charsets.UTF_8);
+        long value = com.dremio.exec.expr.fn.impl.DateFunctionsUtils.formatDateMilli(input, format, errCtx);
         <#else>
         long value = left.value;
         </#if>
