@@ -15,6 +15,8 @@
  */
 package com.dremio.service.flight;
 
+import static org.apache.arrow.flight.sql.impl.FlightSql.*;
+
 import javax.inject.Provider;
 
 import org.apache.arrow.flight.Action;
@@ -30,7 +32,10 @@ import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.PutResult;
 import org.apache.arrow.flight.Result;
+import org.apache.arrow.flight.SchemaResult;
 import org.apache.arrow.flight.Ticket;
+import org.apache.arrow.flight.sql.FlightSqlProducer;
+import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.memory.BufferAllocator;
 
 import com.dremio.exec.work.protector.UserWorker;
@@ -44,7 +49,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 /**
  * A FlightProducer implementation which exposes Dremio's catalog and produces results from SQL queries.
  */
-public class DremioFlightProducer implements FlightProducer {
+public class DremioFlightProducer implements FlightSqlProducer {
   private final FlightWorkManager flightWorkManager;
   private final Location location;
   private final DremioFlightSessionsManager sessionsManager;
@@ -90,6 +95,11 @@ public class DremioFlightProducer implements FlightProducer {
   }
 
   @Override
+  public SchemaResult getSchema(CallContext context, FlightDescriptor descriptor) {
+    return FlightSqlProducer.super.getSchema(context, descriptor);
+  }
+
+  @Override
   public Runnable acceptPut(CallContext callContext, FlightStream flightStream, StreamListener<PutResult> streamListener) {
     throw CallStatus.UNIMPLEMENTED.withDescription("acceptPut is unimplemented").toRuntimeException();
   }
@@ -97,6 +107,229 @@ public class DremioFlightProducer implements FlightProducer {
   @Override
   public void doAction(CallContext callContext, Action action, StreamListener<Result> streamListener) {
     throw CallStatus.UNIMPLEMENTED.withDescription("doAction is unimplemented").toRuntimeException();
+  }
+
+  @Override
+  public void createPreparedStatement(
+    ActionCreatePreparedStatementRequest actionCreatePreparedStatementRequest,
+    CallContext callContext,
+    StreamListener<Result> streamListener) {
+
+  }
+
+  @Override
+  public void closePreparedStatement(
+    ActionClosePreparedStatementRequest actionClosePreparedStatementRequest,
+    CallContext callContext,
+    StreamListener<Result> streamListener) {
+
+  }
+
+  @Override
+  public FlightInfo getFlightInfoStatement(
+    CommandStatementQuery commandStatementQuery,
+    CallContext callContext, FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public FlightInfo getFlightInfoPreparedStatement(
+    CommandPreparedStatementQuery commandPreparedStatementQuery,
+    CallContext callContext, FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public SchemaResult getSchemaStatement(
+    CommandStatementQuery commandStatementQuery,
+    CallContext callContext, FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public void getStreamStatement(CommandStatementQuery commandStatementQuery,
+                                 CallContext callContext, Ticket ticket,
+                                 ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public void getStreamPreparedStatement(
+    CommandPreparedStatementQuery commandPreparedStatementQuery,
+    CallContext callContext, Ticket ticket,
+    ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public Runnable acceptPutStatement(
+    CommandStatementUpdate commandStatementUpdate,
+    CallContext callContext, FlightStream flightStream,
+    StreamListener<PutResult> streamListener) {
+    return null;
+  }
+
+  @Override
+  public Runnable acceptPutPreparedStatementUpdate(
+    CommandPreparedStatementUpdate commandPreparedStatementUpdate,
+    CallContext callContext, FlightStream flightStream,
+    StreamListener<PutResult> streamListener) {
+    return null;
+  }
+
+  @Override
+  public Runnable acceptPutPreparedStatementQuery(
+    CommandPreparedStatementQuery commandPreparedStatementQuery,
+    CallContext callContext, FlightStream flightStream,
+    StreamListener<PutResult> streamListener) {
+    return null;
+  }
+
+  @Override
+  public FlightInfo getFlightInfoSqlInfo(CommandGetSqlInfo commandGetSqlInfo,
+                                         CallContext callContext,
+                                         FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public SchemaResult getSchemaSqlInfo() {
+    return FlightSqlProducer.super.getSchemaSqlInfo();
+  }
+
+  @Override
+  public void getStreamSqlInfo(CommandGetSqlInfo commandGetSqlInfo,
+                               CallContext callContext, Ticket ticket,
+                               ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public FlightInfo getFlightInfoCatalogs(
+    CommandGetCatalogs commandGetCatalogs, CallContext callContext,
+    FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public SchemaResult getSchemaCatalogs() {
+    return FlightSqlProducer.super.getSchemaCatalogs();
+  }
+
+  @Override
+  public void getStreamCatalogs(CallContext callContext, Ticket ticket,
+                                ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public FlightInfo getFlightInfoSchemas(CommandGetSchemas commandGetSchemas,
+                                         CallContext callContext,
+                                         FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public SchemaResult getSchemaSchemas() {
+    return FlightSqlProducer.super.getSchemaSchemas();
+  }
+
+  @Override
+  public void getStreamSchemas(CommandGetSchemas commandGetSchemas,
+                               CallContext callContext, Ticket ticket,
+                               ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public FlightInfo getFlightInfoTables(CommandGetTables commandGetTables,
+                                        CallContext callContext,
+                                        FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public SchemaResult getSchemaTables() {
+    return FlightSqlProducer.super.getSchemaTables();
+  }
+
+  @Override
+  public void getStreamTables(CommandGetTables commandGetTables,
+                              CallContext callContext, Ticket ticket,
+                              ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public FlightInfo getFlightInfoTableTypes(
+    CommandGetTableTypes commandGetTableTypes, CallContext callContext,
+    FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public SchemaResult getSchemaTableTypes() {
+    return FlightSqlProducer.super.getSchemaTableTypes();
+  }
+
+  @Override
+  public void getStreamTableTypes(CallContext callContext, Ticket ticket,
+                                  ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public FlightInfo getFlightInfoPrimaryKeys(
+    CommandGetPrimaryKeys commandGetPrimaryKeys,
+    CallContext callContext, FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public SchemaResult getSchemaPrimaryKeys() {
+    return FlightSqlProducer.super.getSchemaPrimaryKeys();
+  }
+
+  @Override
+  public void getStreamPrimaryKeys(CommandGetPrimaryKeys commandGetPrimaryKeys,
+                                   CallContext callContext, Ticket ticket,
+                                   ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public FlightInfo getFlightInfoExportedKeys(
+    CommandGetExportedKeys commandGetExportedKeys,
+    CallContext callContext, FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public FlightInfo getFlightInfoImportedKeys(
+    CommandGetImportedKeys commandGetImportedKeys,
+    CallContext callContext, FlightDescriptor flightDescriptor) {
+    return null;
+  }
+
+  @Override
+  public SchemaResult getSchemaForImportedAndExportedKeys() {
+    return FlightSqlProducer.super.getSchemaForImportedAndExportedKeys();
+  }
+
+  @Override
+  public void getStreamExportedKeys(
+    CommandGetExportedKeys commandGetExportedKeys,
+    CallContext callContext, Ticket ticket,
+    ServerStreamListener serverStreamListener) {
+
+  }
+
+  @Override
+  public void getStreamImportedKeys(
+    CommandGetImportedKeys commandGetImportedKeys,
+    CallContext callContext, Ticket ticket,
+    ServerStreamListener serverStreamListener) {
+
   }
 
   @Override
@@ -112,5 +345,10 @@ public class DremioFlightProducer implements FlightProducer {
    */
   private CallHeaders retrieveHeadersFromCallContext(CallContext callContext) {
     return callContext.getMiddleware(FlightConstants.HEADER_KEY).headers();
+  }
+
+  @Override
+  public void close() throws Exception {
+
   }
 }
