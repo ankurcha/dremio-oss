@@ -86,12 +86,8 @@ public class DremioFlightProducer implements FlightSqlProducer {
   }
 
   @Override
-  public FlightInfo getFlightInfo(CallContext callContext, FlightDescriptor flightDescriptor) {
-    final CallHeaders headers = retrieveHeadersFromCallContext(callContext);
-    final UserSession session = sessionsManager.getUserSession(callContext.peerIdentity(), headers);
-    final FlightPreparedStatement flightPreparedStatement = flightWorkManager
-      .createPreparedStatement(flightDescriptor, callContext::isCancelled, session);
-    return flightPreparedStatement.getFlightInfo(location);
+  public FlightInfo getFlightInfo(CallContext context, FlightDescriptor descriptor) {
+    return FlightSqlProducer.super.getFlightInfo(context, descriptor);
   }
 
   @Override

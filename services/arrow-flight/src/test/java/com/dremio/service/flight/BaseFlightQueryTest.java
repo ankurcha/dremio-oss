@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.auth.BasicServerAuthHandler;
+import org.apache.arrow.flight.sql.FlightSqlClient;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.junit.AfterClass;
 
@@ -197,15 +198,15 @@ public class BaseFlightQueryTest extends BaseTestQuery {
   /**
    * Opens a client which the test is responsible for closing.
    */
-  protected static FlightClient openFlightClient(String user, String password, String authMode) throws Exception {
+  protected static FlightSqlClient openFlightClient(String user, String password, String authMode) throws Exception {
     return FlightClientUtils.openFlightClient(flightServicePort, user, password, getSabotContext(),
-      authMode).getClient();
+      authMode).getSqlClient();
   }
 
-  protected static FlightClient openEncryptedFlightClient(String user, String password,
+  protected static FlightSqlClient openEncryptedFlightClient(String user, String password,
                                                           InputStream trustedCerts, String authMode) throws Exception {
     return FlightClientUtils.openEncryptedFlightClient(dremioConfig.getThisNode(), flightServicePort, user, password,
-      trustedCerts, BaseTestQuery.getSabotContext(), authMode).getClient();
+      trustedCerts, BaseTestQuery.getSabotContext(), authMode).getSqlClient();
   }
 
   private static void createEncryptedFlightService(RunQueryResponseHandlerFactory runQueryResponseHandlerFactory) throws Exception {
