@@ -18,11 +18,11 @@ package com.dremio.service.flight;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.FlightRuntimeException;
@@ -42,7 +42,7 @@ import org.junit.rules.ExpectedException;
 /**
  * Test functionality of the FlightClient communicating to the Flight endpoint.
  */
-public abstract class AbstractTestFlightServer extends BaseFlightQueryTest {
+public abstract class AbstractTestFlightSqlServer extends BaseFlightQueryTest {
   private static final String SELECT_QUERY = "SELECT 1 AS col_int, 'foobar' AS col_string";
   private static final String SELECT_QUERY_10K = "select * from cp.\"/10k_rows.parquet\"";
   private static final int TOTAL_ROWS_SELECT_QUERY_10K = 10001;
@@ -203,21 +203,20 @@ public abstract class AbstractTestFlightServer extends BaseFlightQueryTest {
     return FlightDescriptor.command(query.getBytes(StandardCharsets.UTF_8));
   }
 
-  private FlightInfo getFlightInfo(String query) {
+  private FlightInfo getFlightInfo(String query) throws IOException {
     final FlightClientUtils.FlightClientWrapper  wrapper = getFlightClientWrapper();
-    return (DremioFlightService.FLIGHT_LEGACY_AUTH_MODE.equals(wrapper.getAuthMode()))?
-      wrapper.getClient().getInfo(toFlightDescriptor(query)):
-      wrapper.getClient().getInfo(toFlightDescriptor(query), wrapper.getTokenCallOption());
+    final FlightSqlClient.PreparedStatement prepare = wrapper.getSqlClient().prepare(query);
+    return prepare.execute();
   }
 
-  private FlightStream executeQuery(FlightClientUtils.FlightClientWrapper wrapper, String query) {
+  private FlightStream executeQuery(FlightClientUtils.FlightClientWrapper wrapper, String query) throws IOException {
     // Assumption is that we have exactly one endpoint returned.
     return (DremioFlightService.FLIGHT_LEGACY_AUTH_MODE.equals(wrapper.getAuthMode()))?
-      wrapper.getClient().getStream(getFlightInfo(query).getEndpoints().get(0).getTicket()):
-      wrapper.getClient().getStream(getFlightInfo(query).getEndpoints().get(0).getTicket(), wrapper.getTokenCallOption());
+      wrapper.getSqlClient().getStream(getFlightInfo(query).getEndpoints().get(0).getTicket()):
+      wrapper.getSqlClient().getStream(getFlightInfo(query).getEndpoints().get(0).getTicket(), wrapper.getTokenCallOption());
   }
 
-  private FlightStream executeQuery(String query) {
+  private FlightStream executeQuery(String query) throws IOException {
     // Assumption is that we have exactly one endpoint returned.
     return executeQuery(getFlightClientWrapper(), query);
   }

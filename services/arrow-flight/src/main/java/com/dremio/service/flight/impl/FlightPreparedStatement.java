@@ -15,11 +15,14 @@
  */
 package com.dremio.service.flight.impl;
 
+import static org.apache.arrow.flight.sql.impl.FlightSql.*;
+
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.Ticket;
+import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.vector.types.pojo.Schema;
 
 import com.dremio.exec.proto.UserProtos;
@@ -63,6 +66,17 @@ public class FlightPreparedStatement {
 
     final FlightEndpoint flightEndpoint = new FlightEndpoint(ticket, location);
     return new FlightInfo(schema, flightDescriptor, ImmutableList.of(flightEndpoint), -1, -1);
+  }
+
+  public ActionCreatePreparedStatementResult createAction() {
+    final UserProtos.CreatePreparedStatementArrowResp createPreparedStatementResp = responseHandler.get();
+    final Schema schema = buildSchema(createPreparedStatementResp.getPreparedStatement().getArrowSchema());
+
+    return ActionCreatePreparedStatementResult.newBuilder()
+        .setDatasetSchema(ByteString.copyFrom(schema.toByteArray()))
+        .setParameterSchema(ByteString.EMPTY)
+        .setPreparedStatementHandle(createPreparedStatementResp.getPreparedStatement().getServerHandle().toByteString())
+        .build();
   }
 
   /**

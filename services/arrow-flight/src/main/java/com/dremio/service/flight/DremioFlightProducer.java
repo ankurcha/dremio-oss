@@ -15,7 +15,10 @@
  */
 package com.dremio.service.flight;
 
+import static com.google.protobuf.Any.pack;
 import static org.apache.arrow.flight.sql.impl.FlightSql.*;
+
+import java.nio.charset.StandardCharsets;
 
 import javax.inject.Provider;
 
@@ -34,16 +37,22 @@ import org.apache.arrow.flight.PutResult;
 import org.apache.arrow.flight.Result;
 import org.apache.arrow.flight.SchemaResult;
 import org.apache.arrow.flight.Ticket;
+import org.apache.arrow.flight.sql.FlightSqlClient;
 import org.apache.arrow.flight.sql.FlightSqlProducer;
+import org.apache.arrow.flight.sql.FlightSqlUtils;
 import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.types.pojo.Schema;
 
+import com.dremio.exec.proto.UserProtos;
 import com.dremio.exec.work.protector.UserWorker;
 import com.dremio.options.OptionManager;
 import com.dremio.sabot.rpc.user.UserSession;
 import com.dremio.service.flight.impl.FlightPreparedStatement;
 import com.dremio.service.flight.impl.FlightWorkManager;
 import com.dremio.service.flight.impl.FlightWorkManager.RunQueryResponseHandlerFactory;
+import com.google.protobuf.Any;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 /**
@@ -86,8 +95,21 @@ public class DremioFlightProducer implements FlightSqlProducer {
   }
 
   @Override
-  public FlightInfo getFlightInfo(CallContext context, FlightDescriptor descriptor) {
-    return FlightSqlProducer.super.getFlightInfo(context, descriptor);
+  public FlightInfo getFlightInfo(CallContext callContext, FlightDescriptor flightDescriptor) {
+
+    try {
+      final Any command = Any.parseFrom(flightDescriptor.getCommand());
+
+      return FlightSqlProducer.super.getFlightInfo(callContext, flightDescriptor);
+    } catch (Exception e) {
+      final CallHeaders headers = retrieveHeadersFromCallContext(callContext);
+      final UserSession session = sessionsManager.getUserSession(callContext.peerIdentity(), headers);
+      final FlightPreparedStatement flightPreparedStatement = flightWorkManager
+        .createPreparedStatement(flightDescriptor, callContext::isCancelled, session);
+      return flightPreparedStatement.getFlightInfo(location);
+    }
+
+
   }
 
   @Override
@@ -101,8 +123,9 @@ public class DremioFlightProducer implements FlightSqlProducer {
   }
 
   @Override
-  public void doAction(CallContext callContext, Action action, StreamListener<Result> streamListener) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("doAction is unimplemented").toRuntimeException();
+  public void doAction(CallContext context, Action action,
+                       StreamListener<Result> listener) {
+    FlightSqlProducer.super.doAction(context, action, listener);
   }
 
   @Override
@@ -111,13 +134,24 @@ public class DremioFlightProducer implements FlightSqlProducer {
     CallContext callContext,
     StreamListener<Result> streamListener) {
 
+    final FlightDescriptor flightDescriptor =
+      FlightDescriptor.command(actionCreatePreparedStatementRequest.getQuery().getBytes(StandardCharsets.UTF_8));
+
+    final CallHeaders headers = retrieveHeadersFromCallContext(callContext);
+    final UserSession session = sessionsManager.getUserSession(callContext.peerIdentity(), headers);
+    final FlightPreparedStatement flightPreparedStatement = flightWorkManager
+      .createPreparedStatement(flightDescriptor, callContext::isCancelled, session);
+
+    final ActionCreatePreparedStatementResult action = flightPreparedStatement.createAction();
+    streamListener.onNext(new Result(pack(action).toByteArray()));
+    streamListener.onCompleted();
   }
 
   @Override
   public void closePreparedStatement(
     ActionClosePreparedStatementRequest actionClosePreparedStatementRequest,
     CallContext callContext,
-    StreamListener<Result> streamListener) {
+    StreamListener<Result> listener) {
 
   }
 
@@ -132,7 +166,21 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoPreparedStatement(
     CommandPreparedStatementQuery commandPreparedStatementQuery,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    return null;
+
+    final ByteString preparedStatementHandle = commandPreparedStatementQuery.getPreparedStatementHandle();
+    try {
+      final UserProtos.PreparedStatementHandle preparedStatementHandle1 =
+        UserProtos.PreparedStatementHandle.parseFrom(preparedStatementHandle);
+
+
+
+
+
+    } catch (InvalidProtocolBufferException e) {
+      e.printStackTrace();
+    }
+
+
   }
 
   @Override
