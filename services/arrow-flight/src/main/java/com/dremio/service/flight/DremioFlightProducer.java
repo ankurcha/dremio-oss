@@ -15,10 +15,13 @@
  */
 package com.dremio.service.flight;
 
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import static com.google.protobuf.Any.pack;
 import static org.apache.arrow.flight.sql.impl.FlightSql.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Provider;
 
@@ -29,6 +32,7 @@ import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.Criteria;
 import org.apache.arrow.flight.FlightConstants;
 import org.apache.arrow.flight.FlightDescriptor;
+import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.FlightProducer;
 import org.apache.arrow.flight.FlightStream;
@@ -51,6 +55,9 @@ import com.dremio.sabot.rpc.user.UserSession;
 import com.dremio.service.flight.impl.FlightPreparedStatement;
 import com.dremio.service.flight.impl.FlightWorkManager;
 import com.dremio.service.flight.impl.FlightWorkManager.RunQueryResponseHandlerFactory;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -63,6 +70,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   private final Location location;
   private final DremioFlightSessionsManager sessionsManager;
   private final BufferAllocator allocator;
+  private final Cache<UserProtos.PreparedStatementHandle, FlightPreparedStatement> flightPreparedStatementCache;
 
   public DremioFlightProducer(Location location, DremioFlightSessionsManager sessionsManager,
                               Provider<UserWorker> workerProvider, Provider<OptionManager> optionManagerProvider,
@@ -72,14 +80,33 @@ public class DremioFlightProducer implements FlightSqlProducer {
     this.allocator = allocator;
 
     flightWorkManager = new FlightWorkManager(workerProvider, optionManagerProvider, runQueryResponseHandlerFactory);
+
+    flightPreparedStatementCache = CacheBuilder.newBuilder()
+      .maximumSize(1024)
+      .expireAfterAccess(30, TimeUnit.MINUTES)
+      .removalListener(removalNotification -> { /* TODO */ })
+      .build();
   }
 
   @Override
   public void getStream(CallContext callContext, Ticket ticket, ServerStreamListener serverStreamListener) {
     try {
+      FlightSqlProducer.super.getStream(callContext, ticket, serverStreamListener);
+    } catch (StatusRuntimeException e) {
+      if (e.getStatus() == Status.INVALID_ARGUMENT) {
+        getStreamLegacy(callContext, ticket, serverStreamListener);
+        return;
+      }
+      throw e;
+    }
+  }
+
+  private void getStreamLegacy(CallContext callContext, Ticket ticket, ServerStreamListener serverStreamListener) {
+    try {
       final CallHeaders headers = retrieveHeadersFromCallContext(callContext);
       final UserSession session = sessionsManager.getUserSession(callContext.peerIdentity(), headers);
-      final TicketContent.PreparedStatementTicket preparedStatementTicket = TicketContent.PreparedStatementTicket.parseFrom(ticket.getBytes());
+      final TicketContent.PreparedStatementTicket preparedStatementTicket = TicketContent.PreparedStatementTicket.parseFrom(
+        ticket.getBytes());
 
       flightWorkManager.runPreparedStatement(preparedStatementTicket, serverStreamListener, allocator, session);
     } catch (InvalidProtocolBufferException ex) {
@@ -142,7 +169,10 @@ public class DremioFlightProducer implements FlightSqlProducer {
     final FlightPreparedStatement flightPreparedStatement = flightWorkManager
       .createPreparedStatement(flightDescriptor, callContext::isCancelled, session);
 
+    flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
+
     final ActionCreatePreparedStatementResult action = flightPreparedStatement.createAction();
+
     streamListener.onNext(new Result(pack(action).toByteArray()));
     streamListener.onCompleted();
   }
@@ -167,17 +197,25 @@ public class DremioFlightProducer implements FlightSqlProducer {
     CommandPreparedStatementQuery commandPreparedStatementQuery,
     CallContext callContext, FlightDescriptor flightDescriptor) {
 
-    final ByteString preparedStatementHandle = commandPreparedStatementQuery.getPreparedStatementHandle();
     try {
-      final UserProtos.PreparedStatementHandle preparedStatementHandle1 =
-        UserProtos.PreparedStatementHandle.parseFrom(preparedStatementHandle);
+      final UserProtos.PreparedStatementHandle preparedStatementHandle =
+        UserProtos.PreparedStatementHandle.parseFrom(commandPreparedStatementQuery.getPreparedStatementHandle());
 
+      FlightPreparedStatement preparedStatement = flightPreparedStatementCache.getIfPresent(preparedStatementHandle);
+      if (preparedStatement == null) {
+        // TODO Handle error properly
+        throw new NullPointerException();
+      }
 
+      Schema schema = preparedStatement.getSchema();
 
+      final Ticket ticket = new Ticket(pack(commandPreparedStatementQuery).toByteArray());
 
-
+      final FlightEndpoint flightEndpoint = new FlightEndpoint(ticket, location);
+      return new FlightInfo(schema, flightDescriptor, ImmutableList.of(flightEndpoint), -1, -1);
     } catch (InvalidProtocolBufferException e) {
-      e.printStackTrace();
+      // TODO Handle error properly
+      throw new RuntimeException(e);
     }
 
 
@@ -202,6 +240,18 @@ public class DremioFlightProducer implements FlightSqlProducer {
     CommandPreparedStatementQuery commandPreparedStatementQuery,
     CallContext callContext, Ticket ticket,
     ServerStreamListener serverStreamListener) {
+    final CallHeaders headers = retrieveHeadersFromCallContext(callContext);
+    final UserSession session = sessionsManager.getUserSession(callContext.peerIdentity(), headers);
+
+    try {
+      UserProtos.PreparedStatementHandle preparedStatementHandle =
+        UserProtos.PreparedStatementHandle.parseFrom(commandPreparedStatementQuery.getPreparedStatementHandle());
+
+      flightWorkManager.runPreparedStatement(preparedStatementHandle, serverStreamListener, allocator, session);
+    } catch (InvalidProtocolBufferException e) {
+      // TODO: Handle errors properly
+      throw new RuntimeException(e);
+    }
 
   }
 

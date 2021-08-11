@@ -22,7 +22,6 @@ import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.Ticket;
-import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.vector.types.pojo.Schema;
 
 import com.dremio.exec.proto.UserProtos;
@@ -59,7 +58,7 @@ public class FlightPreparedStatement {
 
     final PreparedStatementTicket preparedStatementTicketContent = PreparedStatementTicket.newBuilder()
       .setQuery(query)
-      .setHandle(createPreparedStatementResp.getPreparedStatement().getServerHandle())
+      .setHandle(getServerHandle())
       .build();
 
     final Ticket ticket = new Ticket(preparedStatementTicketContent.toByteArray());
@@ -75,8 +74,13 @@ public class FlightPreparedStatement {
     return ActionCreatePreparedStatementResult.newBuilder()
         .setDatasetSchema(ByteString.copyFrom(schema.toByteArray()))
         .setParameterSchema(ByteString.EMPTY)
-        .setPreparedStatementHandle(createPreparedStatementResp.getPreparedStatement().getServerHandle().toByteString())
+        .setPreparedStatementHandle(getServerHandle().toByteString())
         .build();
+  }
+
+  public UserProtos.PreparedStatementHandle getServerHandle() {
+    UserProtos.CreatePreparedStatementArrowResp createPreparedStatementResp = responseHandler.get();
+    return createPreparedStatementResp.getPreparedStatement().getServerHandle();
   }
 
   /**

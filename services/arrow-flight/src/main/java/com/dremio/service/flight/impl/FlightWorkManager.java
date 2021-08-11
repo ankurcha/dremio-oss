@@ -90,7 +90,13 @@ public class FlightWorkManager {
 
   public void runPreparedStatement(TicketContent.PreparedStatementTicket ticket, FlightProducer.ServerStreamListener listener,
                                    BufferAllocator allocator, UserSession userSession) {
+    UserProtos.PreparedStatementHandle handle = ticket.getHandle();
+    runPreparedStatement(handle, listener, allocator, userSession);
+  }
 
+  public void runPreparedStatement(UserProtos.PreparedStatementHandle handle,
+                                   FlightProducer.ServerStreamListener listener, BufferAllocator allocator,
+                                   UserSession userSession) {
     final UserBitShared.ExternalId runExternalId = ExternalIdHelper.generateExternalId();
     final UserRequest userRequest =
       new UserRequest(UserProtos.RpcType.RUN_QUERY,
@@ -100,7 +106,7 @@ public class FlightWorkManager {
             .setWorkloadType(UserBitShared.WorkloadType.FLIGHT)
             .setWorkloadClass(UserBitShared.WorkloadClass.GENERAL))
           .setSource(UserProtos.SubmissionSource.FLIGHT)
-          .setPreparedStatementHandle(ticket.getHandle())
+          .setPreparedStatementHandle(handle)
           .build());
 
     final UserResponseHandler responseHandler = runQueryResponseHandlerFactory.getHandler(runExternalId, userSession,
