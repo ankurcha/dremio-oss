@@ -218,8 +218,7 @@ public class UserRequest {
     case GET_TABLES:
       return RequestType.GET_TABLES;
     case GET_TABLES_TYPES:
-      // TODO Check how to create a requestType.GET_TABLE_TYPES
-     return RequestType.GET_TABLES;
+     return RequestType.GET_TABLE_TYPES;
     case GET_SERVER_META:
       return RequestType.GET_SERVER_META;
     case RUN_QUERY:
