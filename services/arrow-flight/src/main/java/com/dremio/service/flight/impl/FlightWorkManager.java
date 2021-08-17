@@ -154,21 +154,8 @@ public class FlightWorkManager {
     final UserRequest userRequest =
       new UserRequest(UserProtos.RpcType.GET_TABLES_TYPES, builder.build());
 
-    final UserResponseHandler responseHandler = new UserResponseHandler() {
-      @Override
-      public void sendData(RpcOutcomeListener<GeneralRPCProtos.Ack> outcomeListener,
-                           QueryWritableBatch result) {
-        // TODO just printing here to check on debug if the results as we expected
-        System.out.println("Testing");
-      }
-
-      @Override
-      public void completed(UserResult result) {
-        // TODO just printing here to check on debug if the results as we expected
-        System.out.println("Testing");
-      }
-    };
-        workerProvider.get().submitWork(runExternalId, userSession, responseHandler, userRequest, TerminationListenerRegistry.NOOP);
+    final UserResponseHandler responseHandler = new GetTableTypesResponseHandler(allocator, listener);
+      workerProvider.get().submitWork(runExternalId, userSession, responseHandler, userRequest, TerminationListenerRegistry.NOOP);
   }
 
   @VisibleForTesting
