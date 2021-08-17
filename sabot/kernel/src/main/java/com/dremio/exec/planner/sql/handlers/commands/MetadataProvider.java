@@ -35,6 +35,7 @@ import com.dremio.exec.catalog.MetadataRequestOptions;
 import com.dremio.exec.proto.UserBitShared.DremioPBError;
 import com.dremio.exec.proto.UserBitShared.DremioPBError.ErrorType;
 import com.dremio.exec.proto.UserBitShared.QueryId;
+import com.dremio.exec.proto.UserProtos;
 import com.dremio.exec.proto.UserProtos.CatalogMetadata;
 import com.dremio.exec.proto.UserProtos.ColumnMetadata;
 import com.dremio.exec.proto.UserProtos.GetCatalogsReq;
@@ -298,6 +299,14 @@ public class MetadataProvider {
     @Override
     public GetTablesTypesResp execute() throws Exception {
       final GetTablesTypesResp.Builder respBuilder = GetTablesTypesResp.newBuilder();
+      final UserProtos.TableTypesMetadata table =
+        UserProtos.TableTypesMetadata.newBuilder().setTableType("TABLE").build();
+      final UserProtos.TableTypesMetadata view =
+        UserProtos.TableTypesMetadata.newBuilder().setTableType("VIEW").build();
+      final UserProtos.TableTypesMetadata system_table =
+        UserProtos.TableTypesMetadata.newBuilder().setTableType("SYSTEM_TABLE").build();
+
+      respBuilder.addAllTableTypes(ImmutableList.of(table, view, system_table));
       respBuilder.setQueryId(queryId);
       respBuilder.setStatus(RequestStatus.OK);
       return respBuilder.build();
