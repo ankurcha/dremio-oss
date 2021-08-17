@@ -18,16 +18,19 @@ package com.dremio.service.flight;
 
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.stream.IntStream;
 
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.sql.FlightSqlClient;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.util.Text;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.dremio.service.flight.impl.FlightWorkManager;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Test FlightServer with basic authentication using FlightSql producer.
@@ -121,6 +124,25 @@ public class TestFlightSqlServerWithBasicAuth extends AbstractTestFlightServer {
       Assert.assertTrue(stream.next());
       VectorSchemaRoot root = stream.getRoot();
       Assert.assertTrue(root.getRowCount() > 0);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Test
+  public void testGetTablesTypes() {
+    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    FlightInfo flightInfo = flightSqlClient.getTableTypes();
+    try (FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket())) {
+      Assert.assertTrue(stream.next());
+      VectorSchemaRoot root = stream.getRoot();
+      final int rowCount = root.getRowCount();
+      Assert.assertEquals(rowCount, 3);
+
+      final ImmutableList<Text> item = ImmutableList.of(new Text("TABLE"), new Text("VIEW"), new Text("SYSTEM_TABLE"));
+
+      final IntStream range = IntStream.range(0, rowCount);
+      range.forEach(i -> Assert.assertEquals(root.getVector(0).getObject(i), item.get(i)));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
