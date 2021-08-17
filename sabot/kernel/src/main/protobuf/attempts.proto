@@ -39,4 +39,5 @@ enum RequestType {
   EXECUTE_PREPARE = 6;
   RUN_SQL = 7;
   GET_SERVER_META = 8;
+  GET_TABLE_TYPES = 9;
 }
