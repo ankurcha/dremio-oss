@@ -24,6 +24,7 @@ import com.dremio.exec.proto.GeneralRPCProtos.Ack;
 import com.dremio.exec.proto.UserBitShared.QueryData;
 import com.dremio.exec.proto.UserBitShared.QueryId;
 import com.dremio.exec.proto.UserBitShared.QueryResult;
+import com.dremio.exec.proto.UserProtos;
 import com.dremio.exec.proto.UserProtos.BitToUserHandshake;
 import com.dremio.exec.proto.UserProtos.CreatePreparedStatementArrowReq;
 import com.dremio.exec.proto.UserProtos.CreatePreparedStatementArrowResp;
@@ -72,6 +73,7 @@ public class UserRpcConfig {
         .add(RpcType.GET_CATALOGS, GetCatalogsReq.class, RpcType.CATALOGS, GetCatalogsResp.class) // user to bit
         .add(RpcType.GET_SCHEMAS, GetSchemasReq.class, RpcType.SCHEMAS, GetSchemasResp.class) // user to bit
         .add(RpcType.GET_TABLES, GetTablesReq.class, RpcType.TABLES, GetTablesResp.class) // user to bit
+        .add(RpcType.GET_TABLES_TYPES, UserProtos.GetTablesTypesReq.class, RpcType.TABLES_TYPES, UserProtos.GetTablesTypesResp.class) // user to bit
         .add(RpcType.GET_COLUMNS, GetColumnsReq.class, RpcType.COLUMNS, GetColumnsResp.class) // user to bit
         .add(RpcType.CREATE_PREPARED_STATEMENT, CreatePreparedStatementReq.class,
           RpcType.PREPARED_STATEMENT, CreatePreparedStatementResp.class) // user to bit
@@ -90,7 +92,7 @@ public class UserRpcConfig {
       ImmutableSet
         .<RpcType> builder()
         .add(RpcType.RUN_QUERY, RpcType.CANCEL_QUERY, RpcType.GET_QUERY_PLAN_FRAGMENTS, RpcType.RESUME_PAUSED_QUERY,
-            RpcType.GET_CATALOGS, RpcType.GET_SCHEMAS, RpcType.GET_TABLES, RpcType.GET_COLUMNS,
+            RpcType.GET_CATALOGS, RpcType.GET_SCHEMAS, RpcType.GET_TABLES, RpcType.GET_TABLES_TYPES, RpcType.GET_COLUMNS,
             RpcType.CREATE_PREPARED_STATEMENT, RpcType.GET_SERVER_META, RpcType.CREATE_PREPARED_STATEMENT_ARROW)
         .build()
       );
