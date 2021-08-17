@@ -539,6 +539,8 @@ public final class JobsProtoUtil {
         return com.dremio.service.job.RequestType.GET_SCHEMAS;
       case GET_TABLES:
         return com.dremio.service.job.RequestType.GET_TABLES;
+      case GET_TABLE_TYPES:
+        return com.dremio.service.job.RequestType.GET_TABLE_TYPES;
       case CREATE_PREPARE:
         return com.dremio.service.job.RequestType.CREATE_PREPARE;
       case EXECUTE_PREPARE:
@@ -565,6 +567,8 @@ public final class JobsProtoUtil {
         return RequestType.GET_SCHEMAS;
       case GET_TABLES:
         return RequestType.GET_TABLES;
+      case GET_TABLE_TYPES:
+        return RequestType.GET_TABLE_TYPES;
       case CREATE_PREPARE:
         return RequestType.CREATE_PREPARE;
       case RUN_SQL:
