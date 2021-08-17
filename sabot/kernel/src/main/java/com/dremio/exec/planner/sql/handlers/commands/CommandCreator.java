@@ -97,6 +97,7 @@ import com.dremio.exec.proto.UserProtos.GetColumnsReq;
 import com.dremio.exec.proto.UserProtos.GetSchemasReq;
 import com.dremio.exec.proto.UserProtos.GetServerMetaReq;
 import com.dremio.exec.proto.UserProtos.GetTablesReq;
+import com.dremio.exec.proto.UserProtos.GetTablesTypesReq;
 import com.dremio.exec.proto.UserProtos.RunQuery;
 import com.dremio.exec.server.SabotContext;
 import com.dremio.exec.testing.ControlsInjector;
@@ -167,6 +168,10 @@ public class CommandCreator {
       case GET_TABLES:
         return new MetadataProvider.TablesProvider(dbContext.getConduitInProcessChannelProviderProvider(),
           getParameters(context.getSession(), context.getQueryId()), request.unwrap(GetTablesReq.class));
+
+      case GET_TABLES_TYPES:
+        return new MetadataProvider.TablesTypesProvider(dbContext.getConduitInProcessChannelProviderProvider(),
+          getParameters(context.getSession(), context.getQueryId()), request.unwrap(GetTablesTypesReq.class));
 
       case GET_COLUMNS:
         return new MetadataProvider.ColumnsProvider(dbContext.getConduitInProcessChannelProviderProvider(),
