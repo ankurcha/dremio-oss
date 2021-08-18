@@ -20,6 +20,7 @@ import java.sql.SQLException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.Collections;
+import java.util.stream.IntStream;
 
 import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.FlightInfo;
@@ -30,6 +31,7 @@ import org.apache.arrow.vector.VectorSchemaRoot;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.dremio.service.catalog.TableType;
 import com.dremio.exec.expr.fn.impl.RegexpUtil;
 import com.dremio.exec.planner.sql.handlers.commands.MetadataProviderConditions;
 import com.dremio.exec.proto.UserProtos;
@@ -144,6 +146,22 @@ public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServ
       VectorSchemaRoot root = stream.getRoot();
 
       Assert.assertEquals(root.getRowCount(), 0);
+    }
+  }
+
+  @Test
+  public void testGetTablesTypes() throws Exception {
+    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    FlightInfo flightInfo = flightSqlClient.getTableTypes(getCallOptions());
+    try (FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(), getCallOptions())) {
+      Assert.assertTrue(stream.next());
+      VectorSchemaRoot root = stream.getRoot();
+
+      final IntStream range = IntStream.range(0, TableType.values().length);
+
+      Assert.assertEquals(root.getRowCount(), 5);
+      range.forEach(i -> Assert.assertEquals(root.getVector(0).getObject(i).toString(),
+        TableType.values()[i].toString()));
     }
   }
 
