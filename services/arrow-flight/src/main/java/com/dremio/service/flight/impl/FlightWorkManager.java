@@ -41,6 +41,7 @@ import com.dremio.exec.work.protector.UserResponseHandler;
 import com.dremio.exec.work.protector.UserWorker;
 import com.dremio.options.OptionManager;
 import com.dremio.sabot.rpc.user.UserSession;
+import com.dremio.service.catalog.TableType;
 import com.dremio.service.flight.DremioFlightServiceOptions;
 import com.dremio.service.flight.impl.RunQueryResponseHandler.BackpressureHandlingResponseHandler;
 import com.dremio.service.flight.impl.RunQueryResponseHandler.BasicResponseHandler;
@@ -160,6 +161,33 @@ public class FlightWorkManager {
       listener.completed();
     }
     workerProvider.get().submitWork(runExternalId, userSession, responseHandler, userRequest, TerminationListenerRegistry.NOOP);
+  }
+
+  /**
+   * Retrieve the table types and sends the response to given ServerStreamListener.
+   *
+   * @param listener    ServerStreamListener listening to the job result.
+   * @param allocator   BufferAllocator used to allocate the response VectorSchemaRoot.
+   */
+  public void runGetTablesTypes(FlightProducer.ServerStreamListener listener,
+                                BufferAllocator allocator) {
+    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FlightSqlProducer.Schemas.GET_TABLES_SCHEMA,
+      allocator)) {
+      listener.start(vectorSchemaRoot);
+
+      vectorSchemaRoot.allocateNew();
+      VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+
+
+      final int tablesCount = TableType.values().length;
+      final IntStream range = IntStream.range(0, tablesCount);
+
+      range.forEach(i -> tableTypeVector.setSafe(i, new Text(String.valueOf(TableType.values()[i]))));
+
+      vectorSchemaRoot.setRowCount(tablesCount);
+      listener.putNext();
+      listener.completed();
+    }
   }
 
   /**
