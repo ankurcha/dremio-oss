@@ -171,7 +171,7 @@ public class FlightWorkManager {
    */
   public void runGetTablesTypes(FlightProducer.ServerStreamListener listener,
                                 BufferAllocator allocator) {
-    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FlightSqlProducer.Schemas.GET_TABLES_SCHEMA,
+    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FlightSqlProducer.Schemas.GET_TABLE_TYPES_SCHEMA,
       allocator)) {
       listener.start(vectorSchemaRoot);
 
