@@ -17,7 +17,6 @@
 package com.dremio.service.flight;
 
 import static com.google.protobuf.Any.pack;
-import static java.util.Collections.singletonList;
 import static org.apache.arrow.flight.sql.impl.FlightSql.ActionClosePreparedStatementRequest;
 import static org.apache.arrow.flight.sql.impl.FlightSql.ActionCreatePreparedStatementRequest;
 import static org.apache.arrow.flight.sql.impl.FlightSql.ActionCreatePreparedStatementResult;
@@ -35,7 +34,6 @@ import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementQuery;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementUpdate;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Provider;
@@ -375,13 +373,16 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoTableTypes(
     CommandGetTableTypes commandGetTableTypes, CallContext callContext,
     FlightDescriptor flightDescriptor) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetTableTypes not supported.").toRuntimeException();
+    final Schema schema = getSchemaTableTypes().getSchema();
+
+    return getFlightInfoForFlightSqlCommands(commandGetTableTypes, flightDescriptor, schema);
   }
 
   @Override
   public void getStreamTableTypes(CallContext callContext, Ticket ticket,
                                   ServerStreamListener serverStreamListener) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetTableTypes not supported.").toRuntimeException();
+    flightWorkManager.runGetTablesTypes(serverStreamListener,
+      allocator);
   }
 
   @Override
