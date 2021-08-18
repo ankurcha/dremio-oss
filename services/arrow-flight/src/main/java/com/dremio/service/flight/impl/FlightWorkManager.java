@@ -178,11 +178,11 @@ public class FlightWorkManager {
       vectorSchemaRoot.allocateNew();
       VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
 
-
-      final int tablesCount = TableType.values().length;
+      final TableType[] values = TableType.values();
+      final int tablesCount = values.length;
       final IntStream range = IntStream.range(0, tablesCount);
 
-      range.forEach(i -> tableTypeVector.setSafe(i, new Text(String.valueOf(TableType.values()[i]))));
+      range.forEach(i -> tableTypeVector.setSafe(i, new Text(String.valueOf(values[i]))));
 
       vectorSchemaRoot.setRowCount(tablesCount);
       listener.putNext();
