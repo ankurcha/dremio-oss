@@ -33,7 +33,6 @@ import static org.apache.arrow.flight.sql.impl.FlightSql.CommandPreparedStatemen
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementQuery;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementUpdate;
 
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Provider;
@@ -47,7 +46,6 @@ import org.apache.arrow.flight.FlightConstants;
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
-import org.apache.arrow.flight.FlightProducer;
 import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.PutResult;
@@ -56,6 +54,7 @@ import org.apache.arrow.flight.SchemaResult;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.sql.FlightSqlProducer;
 import org.apache.arrow.flight.sql.FlightSqlUtils;
+import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.types.pojo.Schema;
 
@@ -164,8 +163,12 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
   private FlightInfo getFlightInfoLegacy(CallContext callContext, FlightDescriptor flightDescriptor) {
     final UserSession session = getUserSessionFromCallContext(callContext);
+
     final FlightPreparedStatement flightPreparedStatement = flightWorkManager
       .createPreparedStatement(flightDescriptor, callContext::isCancelled, session);
+
+    flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
+
     return flightPreparedStatement.getFlightInfo(location);
   }
 
@@ -221,12 +224,11 @@ public class DremioFlightProducer implements FlightSqlProducer {
     ActionCreatePreparedStatementRequest actionCreatePreparedStatementRequest,
     CallContext callContext,
     StreamListener<Result> streamListener) {
-    final FlightDescriptor flightDescriptor =
-      FlightDescriptor.command(actionCreatePreparedStatementRequest.getQuery().getBytes(StandardCharsets.UTF_8));
+    String query = actionCreatePreparedStatementRequest.getQuery();
 
     final UserSession session = getUserSessionFromCallContext(callContext);
     final FlightPreparedStatement flightPreparedStatement = flightWorkManager
-      .createPreparedStatement(flightDescriptor, callContext::isCancelled, session);
+      .createPreparedStatement(query, callContext::isCancelled, session);
 
     flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
 
@@ -256,21 +258,42 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoStatement(
     CommandStatementQuery commandStatementQuery,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("Statement not supported.").toRuntimeException();
+    final UserSession session = getUserSessionFromCallContext(callContext);
+
+    final FlightPreparedStatement flightPreparedStatement = flightWorkManager
+      .createPreparedStatement(commandStatementQuery.getQuery(), callContext::isCancelled, session);
+
+    flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
+
+    FlightSql.TicketStatementQuery ticket =
+      FlightSql.TicketStatementQuery.newBuilder()
+        .setStatementHandle(flightPreparedStatement.getServerHandle().toByteString())
+        .build();
+
+    Schema schema = flightPreparedStatement.getSchema();
+    return getFlightInfoForFlightSqlCommands(ticket, flightDescriptor, schema);
   }
 
   @Override
   public SchemaResult getSchemaStatement(
     CommandStatementQuery commandStatementQuery,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("Statement not supported.").toRuntimeException();
+    FlightInfo info = this.getFlightInfo(callContext, flightDescriptor);
+    return new SchemaResult(info.getSchema());
   }
 
   @Override
-  public void getStreamStatement(CommandStatementQuery commandStatementQuery,
-                                 CallContext callContext, Ticket ticket,
+  public void getStreamStatement(FlightSql.TicketStatementQuery commandStatementQuery,
+                                 CallContext callContext,
                                  ServerStreamListener serverStreamListener) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("Statement not supported.").toRuntimeException();
+    try {
+      UserProtos.PreparedStatementHandle preparedStatementHandle =
+        UserProtos.PreparedStatementHandle.parseFrom(commandStatementQuery.getStatementHandle());
+
+      runPreparedStatement(callContext, serverStreamListener, preparedStatementHandle);
+    } catch (InvalidProtocolBufferException e) {
+      throw CallStatus.INTERNAL.toRuntimeException();
+    }
   }
 
   @Override
