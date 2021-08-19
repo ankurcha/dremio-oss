@@ -19,10 +19,7 @@ package com.dremio.service.flight;
 import java.sql.SQLException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.arrow.flight.CallOption;
