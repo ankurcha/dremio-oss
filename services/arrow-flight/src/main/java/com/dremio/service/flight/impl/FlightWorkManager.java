@@ -183,7 +183,7 @@ public class FlightWorkManager {
       VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
 
       final List<TableType> tableTypes = Arrays.stream(TableType.values())
-        .filter(tableType -> tableType != TableType.UNKNOWN_TABLE_TYPE || tableType != TableType.UNRECOGNIZED)
+        .filter(tableType -> tableType != TableType.UNKNOWN_TABLE_TYPE && tableType != TableType.UNRECOGNIZED)
         .collect(Collectors.toList());
       final int tablesCount = tableTypes.size();
       final IntStream range = IntStream.range(0, tablesCount);
