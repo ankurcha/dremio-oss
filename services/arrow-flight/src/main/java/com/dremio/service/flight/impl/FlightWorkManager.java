@@ -17,7 +17,10 @@
 package com.dremio.service.flight.impl;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.inject.Provider;
@@ -41,11 +44,13 @@ import com.dremio.exec.work.protector.UserResponseHandler;
 import com.dremio.exec.work.protector.UserWorker;
 import com.dremio.options.OptionManager;
 import com.dremio.sabot.rpc.user.UserSession;
+import com.dremio.service.catalog.TableType;
 import com.dremio.service.flight.DremioFlightServiceOptions;
 import com.dremio.service.flight.impl.RunQueryResponseHandler.BackpressureHandlingResponseHandler;
 import com.dremio.service.flight.impl.RunQueryResponseHandler.BasicResponseHandler;
 import com.dremio.service.flight.protector.CancellableUserResponseHandler;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Manager class for submitting jobs to a UserWorker and optionally returning the appropriate Dremio Flight
@@ -160,6 +165,35 @@ public class FlightWorkManager {
       listener.completed();
     }
     workerProvider.get().submitWork(runExternalId, userSession, responseHandler, userRequest, TerminationListenerRegistry.NOOP);
+  }
+
+  /**
+   * Retrieve the table types and sends the response to given ServerStreamListener.
+   *
+   * @param listener    ServerStreamListener listening to the job result.
+   * @param allocator   BufferAllocator used to allocate the response VectorSchemaRoot.
+   */
+  public void runGetTablesTypes(FlightProducer.ServerStreamListener listener,
+                                BufferAllocator allocator) {
+    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FlightSqlProducer.Schemas.GET_TABLE_TYPES_SCHEMA,
+      allocator)) {
+      listener.start(vectorSchemaRoot);
+
+      vectorSchemaRoot.allocateNew();
+      VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+
+      final List<TableType> tableTypes = Arrays.stream(TableType.values())
+        .filter(tableType -> tableType != TableType.UNKNOWN_TABLE_TYPE && tableType != TableType.UNRECOGNIZED)
+        .collect(Collectors.toList());
+      final int tablesCount = tableTypes.size();
+      final IntStream range = IntStream.range(0, tablesCount);
+
+      range.forEach(i -> tableTypeVector.setSafe(i, new Text(String.valueOf(tableTypes.get(i)))));
+
+      vectorSchemaRoot.setRowCount(tablesCount);
+      listener.putNext();
+      listener.completed();
+    }
   }
 
   /**
