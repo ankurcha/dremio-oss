@@ -19,7 +19,10 @@ package com.dremio.service.flight;
 import java.sql.SQLException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.apache.arrow.flight.CallOption;
@@ -157,7 +160,9 @@ public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServ
       Assert.assertTrue(stream.next());
       VectorSchemaRoot root = stream.getRoot();
 
-      final ImmutableList<TableType> tableTypes = ImmutableList.of(TableType.TABLE, TableType.SYSTEM_TABLE, TableType.VIEW);
+      final List<TableType> tableTypes = Arrays.stream(TableType.values())
+        .filter(tableType -> tableType != TableType.UNKNOWN_TABLE_TYPE || tableType != TableType.UNRECOGNIZED)
+        .collect(Collectors.toList());
       final int counter = tableTypes.size();
 
       final IntStream range = IntStream.range(0, counter);

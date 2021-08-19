@@ -17,7 +17,10 @@
 package com.dremio.service.flight.impl;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.inject.Provider;
@@ -179,7 +182,9 @@ public class FlightWorkManager {
       vectorSchemaRoot.allocateNew();
       VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
 
-      final ImmutableList<TableType> tableTypes = ImmutableList.of(TableType.TABLE, TableType.SYSTEM_TABLE, TableType.VIEW);
+      final List<TableType> tableTypes = Arrays.stream(TableType.values())
+        .filter(tableType -> tableType != TableType.UNKNOWN_TABLE_TYPE || tableType != TableType.UNRECOGNIZED)
+        .collect(Collectors.toList());
       final int tablesCount = tableTypes.size();
       final IntStream range = IntStream.range(0, tablesCount);
 
