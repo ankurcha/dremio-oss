@@ -160,9 +160,7 @@ public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServ
       Assert.assertTrue(stream.next());
       VectorSchemaRoot root = stream.getRoot();
 
-      final List<TableType> tableTypes = Arrays.stream(TableType.values())
-        .filter(tableType -> tableType != TableType.UNKNOWN_TABLE_TYPE || tableType != TableType.UNRECOGNIZED)
-        .collect(Collectors.toList());
+      final ImmutableList<TableType> tableTypes = ImmutableList.of(TableType.TABLE, TableType.SYSTEM_TABLE, TableType.VIEW);
       final int counter = tableTypes.size();
 
       final IntStream range = IntStream.range(0, counter);
