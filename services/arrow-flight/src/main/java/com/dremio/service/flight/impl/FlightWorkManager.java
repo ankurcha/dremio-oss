@@ -47,6 +47,7 @@ import com.dremio.service.flight.impl.RunQueryResponseHandler.BackpressureHandli
 import com.dremio.service.flight.impl.RunQueryResponseHandler.BasicResponseHandler;
 import com.dremio.service.flight.protector.CancellableUserResponseHandler;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Manager class for submitting jobs to a UserWorker and optionally returning the appropriate Dremio Flight
@@ -178,11 +179,11 @@ public class FlightWorkManager {
       vectorSchemaRoot.allocateNew();
       VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
 
-      final TableType[] values = TableType.values();
-      final int tablesCount = values.length;
+      final ImmutableList<TableType> tableTypes = ImmutableList.of(TableType.TABLE, TableType.SYSTEM_TABLE, TableType.VIEW);
+      final int tablesCount = tableTypes.size();
       final IntStream range = IntStream.range(0, tablesCount);
 
-      range.forEach(i -> tableTypeVector.setSafe(i, new Text(String.valueOf(values[i]))));
+      range.forEach(i -> tableTypeVector.setSafe(i, new Text(String.valueOf(tableTypes.get(i)))));
 
       vectorSchemaRoot.setRowCount(tablesCount);
       listener.putNext();

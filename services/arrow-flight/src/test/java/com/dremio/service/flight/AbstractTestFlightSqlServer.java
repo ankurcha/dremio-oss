@@ -157,14 +157,14 @@ public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServ
       Assert.assertTrue(stream.next());
       VectorSchemaRoot root = stream.getRoot();
 
-      final TableType[] values = TableType.values();
-      final int counter = values.length;
+      final ImmutableList<TableType> tableTypes = ImmutableList.of(TableType.TABLE, TableType.SYSTEM_TABLE, TableType.VIEW);
+      final int counter = tableTypes.size();
 
       final IntStream range = IntStream.range(0, counter);
 
       Assert.assertEquals(root.getRowCount(), counter);
       range.forEach(i -> {
-        Assert.assertEquals(root.getVector(0).getObject(i).toString(), values[i].toString());
+        Assert.assertEquals(root.getVector(0).getObject(i).toString(), tableTypes.get(i).toString());
       });
     }
   }
