@@ -16,17 +16,22 @@
 
 package com.dremio.service.flight;
 
+import static com.dremio.service.flight.BaseFlightQueryTest.setupBaseFlightQueryTest;
+
 import org.apache.arrow.flight.CallOption;
 import org.junit.BeforeClass;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
 
 import com.dremio.service.flight.impl.FlightWorkManager;
 
 /**
  * Test FlightServer with basic authentication using FlightSql producer.
  */
-public class TestFlightSqlServerWithBasicAuth extends AbstractTestFlightSqlServer {
-  @BeforeClass
-  public static void setup() throws Exception {
+@RunWith(Enclosed.class)
+public class TestFlightSqlServerWithBasicAuth {
+
+  private static void setup() throws Exception {
     setupBaseFlightQueryTest(
       false,
       true,
@@ -35,13 +40,37 @@ public class TestFlightSqlServerWithBasicAuth extends AbstractTestFlightSqlServe
       DremioFlightService.FLIGHT_LEGACY_AUTH_MODE);
   }
 
-  @Override
-  protected String getAuthMode() {
-    return DremioFlightService.FLIGHT_LEGACY_AUTH_MODE;
+  public static class QueryExecutionTests extends AbstractTestFlightSqlServer {
+    public QueryExecutionTests(ExecutionMode executionMode) {
+      super(executionMode);
+    }
+
+    @BeforeClass
+    public static void setup() throws Exception {
+      TestFlightSqlServerWithBasicAuth.setup();
+    }
+
+    @Override
+    protected String getAuthMode() {
+      return DremioFlightService.FLIGHT_LEGACY_AUTH_MODE;
+    }
+
+    @Override
+    CallOption[] getCallOptions() {
+      return new CallOption[0];
+    }
   }
 
-  @Override
-  CallOption[] getCallOptions() {
-    return new CallOption[0];
+  public static class CatalogMethodsTests extends AbstractTestFlightSqlServerCatalogMethods {
+    @BeforeClass
+    public static void setup() throws Exception {
+      TestFlightSqlServerWithBasicAuth.setup();
+    }
+
+    @Override
+    CallOption[] getCallOptions() {
+      return new CallOption[0];
+    }
   }
+
 }
