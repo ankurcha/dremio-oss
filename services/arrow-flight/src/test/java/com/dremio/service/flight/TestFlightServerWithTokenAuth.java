@@ -16,11 +16,7 @@
 
 package com.dremio.service.flight;
 
-import java.nio.charset.StandardCharsets;
-
 import org.apache.arrow.flight.CallOption;
-import org.apache.arrow.flight.FlightDescriptor;
-import org.apache.arrow.flight.FlightInfo;
 import org.junit.BeforeClass;
 
 import com.dremio.service.flight.impl.FlightWorkManager;
@@ -46,12 +42,6 @@ public class TestFlightServerWithTokenAuth extends AbstractTestFlightServer {
   @Override
   CallOption[] getCallOptions() {
     final FlightClientUtils.FlightClientWrapper wrapper = getFlightClientWrapper();
-    return new CallOption[] { wrapper.getTokenCallOption() };
-  }
-
-  @Override
-  public FlightInfo getFlightInfo(String query) {
-    final FlightDescriptor command = FlightDescriptor.command(query.getBytes(StandardCharsets.UTF_8));
-    return getFlightClientWrapper().getClient().getInfo(command, getCallOptions());
+    return new CallOption[] {wrapper.getTokenCallOption()};
   }
 }

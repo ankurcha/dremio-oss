@@ -32,6 +32,7 @@ import static org.apache.arrow.flight.sql.impl.FlightSql.CommandPreparedStatemen
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandPreparedStatementUpdate;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementQuery;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementUpdate;
+import static org.apache.arrow.flight.sql.impl.FlightSql.TicketStatementQuery;
 
 import java.util.concurrent.TimeUnit;
 
@@ -265,8 +266,8 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
     flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
 
-    FlightSql.TicketStatementQuery ticket =
-      FlightSql.TicketStatementQuery.newBuilder()
+    TicketStatementQuery ticket =
+      TicketStatementQuery.newBuilder()
         .setStatementHandle(flightPreparedStatement.getServerHandle().toByteString())
         .build();
 
@@ -283,7 +284,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   }
 
   @Override
-  public void getStreamStatement(FlightSql.TicketStatementQuery commandStatementQuery,
+  public void getStreamStatement(TicketStatementQuery commandStatementQuery,
                                  CallContext callContext,
                                  ServerStreamListener serverStreamListener) {
     try {
@@ -492,7 +493,8 @@ public class DremioFlightProducer implements FlightSqlProducer {
       command.is(CommandGetCatalogs.class) || command.is(CommandGetSchemas.class) ||
       command.is(CommandGetTables.class) || command.is(CommandGetTableTypes.class) ||
       command.is(CommandGetSqlInfo.class) || command.is(CommandGetPrimaryKeys.class) ||
-      command.is(CommandGetExportedKeys.class) || command.is(CommandGetImportedKeys.class);
+      command.is(CommandGetExportedKeys.class) || command.is(CommandGetImportedKeys.class) ||
+      command.is(TicketStatementQuery.class);
   }
 
   private boolean isFlightSqlCommand(byte[] bytes) {
