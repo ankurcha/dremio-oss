@@ -20,34 +20,18 @@ import static java.util.Arrays.asList;
 
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
-import java.util.Collections;
-import java.util.stream.IntStream;
 
-import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.FlightInfo;
-import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.sql.FlightSqlClient;
-import org.apache.arrow.vector.VarCharVector;
-import org.apache.arrow.vector.VectorSchemaRoot;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import com.dremio.service.catalog.TableType;
-import com.dremio.exec.expr.fn.impl.RegexpUtil;
-import com.dremio.exec.planner.sql.handlers.commands.MetadataProviderConditions;
-import com.dremio.exec.proto.UserProtos;
-
-import com.google.common.collect.ImmutableList;
 
 @RunWith(Parameterized.class)
 public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServer {
 
   private final ExecutionMode executionMode;
+  private FlightSqlClient flightSqlClient;
 
   enum ExecutionMode {
     STATEMENT,
@@ -59,26 +43,31 @@ public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServ
     return asList(ExecutionMode.STATEMENT, ExecutionMode.PREPARED_STATEMENT);
   }
 
+  @Before
+  public void setUp() {
+    flightSqlClient = getFlightClientWrapper().getSqlClient();
+  }
+
   public AbstractTestFlightSqlServer(ExecutionMode executionMode) {
     this.executionMode = executionMode;
   }
 
   private FlightInfo executeStatement(String query) {
-    final FlightSqlClient client = getFlightClientWrapper().getSqlClient();
-    return client.execute(query, getCallOptions());
+    return flightSqlClient.execute(query, getCallOptions());
   }
 
   private FlightInfo executePreparedStatement(String query) throws SQLException {
-    final FlightSqlClient client = getFlightClientWrapper().getSqlClient();
-    final FlightSqlClient.PreparedStatement preparedStatement = client.prepare(query, getCallOptions());
+    final FlightSqlClient.PreparedStatement preparedStatement = flightSqlClient.prepare(query, getCallOptions());
     return preparedStatement.execute(getCallOptions());
   }
 
   @Override
-  public FlightInfo getFlightInfo(String query) throws SQLException{
+  public FlightInfo getFlightInfo(String query) throws SQLException {
     switch (executionMode) {
-      case STATEMENT: return executeStatement(query);
-      case PREPARED_STATEMENT: return executePreparedStatement(query);
+      case STATEMENT:
+        return executeStatement(query);
+      case PREPARED_STATEMENT:
+        return executePreparedStatement(query);
     }
 
     throw new IllegalStateException();
