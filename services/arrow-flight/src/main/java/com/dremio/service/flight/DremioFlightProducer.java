@@ -55,7 +55,6 @@ import org.apache.arrow.flight.SchemaResult;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.sql.FlightSqlProducer;
 import org.apache.arrow.flight.sql.FlightSqlUtils;
-import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.types.pojo.Schema;
 
@@ -286,6 +285,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   @Override
   public void getStreamStatement(TicketStatementQuery commandStatementQuery,
                                  CallContext callContext,
+                                 Ticket ticket,
                                  ServerStreamListener serverStreamListener) {
     try {
       final UserProtos.PreparedStatementHandle preparedStatementHandle =
