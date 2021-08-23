@@ -42,29 +42,29 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetCatalogs() throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    CallOption[] callOptions = getCallOptions();
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final CallOption[] callOptions = getCallOptions();
 
-    FlightInfo flightInfo = flightSqlClient.getCatalogs(callOptions);
+    final FlightInfo flightInfo = flightSqlClient.getCatalogs(callOptions);
     try (FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(), callOptions)) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
       Assert.assertEquals(1, root.getRowCount());
 
-      String catalogName = ((VarCharVector) root.getVector("catalog_name")).getObject(0).toString();
+      final String catalogName = ((VarCharVector) root.getVector("catalog_name")).getObject(0).toString();
       Assert.assertEquals("DREMIO", catalogName);
     }
   }
 
   @Test
   public void testGetTablesWithoutFiltering() throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    FlightInfo flightInfo = flightSqlClient.getTables(null, null, null,
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final FlightInfo flightInfo = flightSqlClient.getTables(null, null, null,
       null, false, getCallOptions());
     try (
-      FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(), getCallOptions())) {
+      final FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(), getCallOptions())) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
 
       Assert.assertEquals(root.getRowCount(), 28);
     }
@@ -72,13 +72,13 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetTablesFilteringByCatalogPattern() throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    FlightInfo flightInfo = flightSqlClient.getTables("DREMIO", null, null,
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final FlightInfo flightInfo = flightSqlClient.getTables("DREMIO", null, null,
       null, false, getCallOptions());
     try (FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
       getCallOptions())) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
 
       Assert.assertEquals(root.getRowCount(), 28);
     }
@@ -86,13 +86,13 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetTablesFilteringBySchemaPattern() throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    FlightInfo flightInfo = flightSqlClient.getTables(null, "INFORMATION_SCHEMA",
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final FlightInfo flightInfo = flightSqlClient.getTables(null, "INFORMATION_SCHEMA",
       null, null, false, getCallOptions());
     try (FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
       getCallOptions())) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
 
       Assert.assertEquals(root.getRowCount(), 5);
     }
@@ -100,13 +100,13 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetTablesFilteringByTablePattern() throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    FlightInfo flightInfo = flightSqlClient.getTables(null, null, "COLUMNS",
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final FlightInfo flightInfo = flightSqlClient.getTables(null, null, "COLUMNS",
       null, false, getCallOptions());
     try (FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
       getCallOptions())) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
 
       Assert.assertEquals(root.getRowCount(), 1);
     }
@@ -114,13 +114,13 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetTablesFilteringByTableTypePattern() throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    FlightInfo flightInfo = flightSqlClient.getTables(null, null, null,
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final FlightInfo flightInfo = flightSqlClient.getTables(null, null, null,
       Collections.singletonList("SYSTEM_TABLE"), false, getCallOptions());
     try (FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
       getCallOptions())) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
 
       Assert.assertEquals(root.getRowCount(), 28);
     }
@@ -128,13 +128,13 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetTablesFilteringByMultiTableTypes() throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    FlightInfo flightInfo = flightSqlClient.getTables(null, null, null,
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final FlightInfo flightInfo = flightSqlClient.getTables(null, null, null,
       ImmutableList.of("TABLE", "VIEW"), false, getCallOptions());
     try (FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
       getCallOptions())) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
 
       Assert.assertEquals(root.getRowCount(), 0);
     }
@@ -142,12 +142,12 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetTablesTypes() throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    FlightInfo flightInfo = flightSqlClient.getTableTypes(getCallOptions());
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final FlightInfo flightInfo = flightSqlClient.getTableTypes(getCallOptions());
     try (
-      FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(), getCallOptions())) {
+      final FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(), getCallOptions())) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
 
       final ImmutableList<TableType> tableTypes =
         ImmutableList.of(TableType.TABLE, TableType.SYSTEM_TABLE, TableType.VIEW);
@@ -163,24 +163,24 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   }
 
   private void testGetSchemas(String catalog, String schemaPattern, boolean expectNonEmptyResult) throws Exception {
-    FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
-    FlightInfo flightInfo = flightSqlClient.getSchemas(catalog, schemaPattern, getCallOptions());
+    final FlightSqlClient flightSqlClient = getFlightClientWrapper().getSqlClient();
+    final FlightInfo flightInfo = flightSqlClient.getSchemas(catalog, schemaPattern, getCallOptions());
     try (
-      FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(), getCallOptions())) {
+      final FlightStream stream = flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(), getCallOptions())) {
       Assert.assertTrue(stream.next());
-      VectorSchemaRoot root = stream.getRoot();
+      final VectorSchemaRoot root = stream.getRoot();
 
-      Predicate<String> catalogNamePredicate = MetadataProviderConditions.getCatalogNamePredicate(
+      final Predicate<String> catalogNamePredicate = MetadataProviderConditions.getCatalogNamePredicate(
         catalog != null ? UserProtos.LikeFilter.newBuilder().setPattern(catalog).build() : null);
-      Pattern schemaFilterPattern = schemaPattern != null ? Pattern.compile(RegexpUtil.sqlToRegexLike(schemaPattern)) :
+      final Pattern schemaFilterPattern = schemaPattern != null ? Pattern.compile(RegexpUtil.sqlToRegexLike(schemaPattern)) :
         Pattern.compile(".*");
 
-      VarCharVector catalogNameVector = (VarCharVector) root.getVector("catalog_name");
-      VarCharVector schemaNameVector = (VarCharVector) root.getVector("schema_name");
+      final VarCharVector catalogNameVector = (VarCharVector) root.getVector("catalog_name");
+      final VarCharVector schemaNameVector = (VarCharVector) root.getVector("schema_name");
 
       for (int i = 0; i < root.getRowCount(); i++) {
-        String catalogName = catalogNameVector.getObject(i).toString();
-        String schemaName = schemaNameVector.getObject(i).toString();
+        final String catalogName = catalogNameVector.getObject(i).toString();
+        final String schemaName = schemaNameVector.getObject(i).toString();
 
         Assert.assertTrue(catalogNamePredicate.test(catalogName));
         Assert.assertTrue(schemaFilterPattern.matcher(schemaName).matches());

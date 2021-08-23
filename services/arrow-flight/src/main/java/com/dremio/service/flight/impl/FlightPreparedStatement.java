@@ -57,7 +57,7 @@ public class FlightPreparedStatement {
     final UserProtos.CreatePreparedStatementArrowResp createPreparedStatementResp = responseHandler.get();
     final Schema schema = buildSchema(createPreparedStatementResp.getPreparedStatement().getArrowSchema());
 
-    UserProtos.PreparedStatementHandle preparedStatementHandle = getServerHandle();
+    final UserProtos.PreparedStatementHandle preparedStatementHandle = getServerHandle();
 
     final FlightSql.CommandPreparedStatementQuery command = FlightSql.CommandPreparedStatementQuery.newBuilder()
       .setPreparedStatementHandle(preparedStatementHandle.toByteString())

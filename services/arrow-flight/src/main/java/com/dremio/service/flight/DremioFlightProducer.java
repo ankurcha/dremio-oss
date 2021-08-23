@@ -225,7 +225,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
     ActionCreatePreparedStatementRequest actionCreatePreparedStatementRequest,
     CallContext callContext,
     StreamListener<Result> streamListener) {
-    String query = actionCreatePreparedStatementRequest.getQuery();
+    final String query = actionCreatePreparedStatementRequest.getQuery();
 
     final UserSession session = getUserSessionFromCallContext(callContext);
     final FlightPreparedStatement flightPreparedStatement = flightWorkManager
@@ -266,12 +266,12 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
     flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
 
-    TicketStatementQuery ticket =
+    final TicketStatementQuery ticket =
       TicketStatementQuery.newBuilder()
         .setStatementHandle(flightPreparedStatement.getServerHandle().toByteString())
         .build();
 
-    Schema schema = flightPreparedStatement.getSchema();
+    final Schema schema = flightPreparedStatement.getSchema();
     return getFlightInfoForFlightSqlCommands(ticket, flightDescriptor, schema);
   }
 
@@ -279,7 +279,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public SchemaResult getSchemaStatement(
     CommandStatementQuery commandStatementQuery,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    FlightInfo info = this.getFlightInfo(callContext, flightDescriptor);
+    final FlightInfo info = this.getFlightInfo(callContext, flightDescriptor);
     return new SchemaResult(info.getSchema());
   }
 
@@ -288,7 +288,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
                                  CallContext callContext,
                                  ServerStreamListener serverStreamListener) {
     try {
-      UserProtos.PreparedStatementHandle preparedStatementHandle =
+      final UserProtos.PreparedStatementHandle preparedStatementHandle =
         UserProtos.PreparedStatementHandle.parseFrom(commandStatementQuery.getStatementHandle());
 
       runPreparedStatement(callContext, serverStreamListener, preparedStatementHandle);
