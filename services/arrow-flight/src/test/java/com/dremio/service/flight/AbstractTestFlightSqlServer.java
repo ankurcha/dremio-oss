@@ -64,13 +64,13 @@ public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServ
   }
 
   private FlightInfo executeStatement(String query) {
-    FlightSqlClient client = getFlightClientWrapper().getSqlClient();
+    final FlightSqlClient client = getFlightClientWrapper().getSqlClient();
     return client.execute(query, getCallOptions());
   }
 
   private FlightInfo executePreparedStatement(String query) throws SQLException {
-    FlightSqlClient client = getFlightClientWrapper().getSqlClient();
-    FlightSqlClient.PreparedStatement preparedStatement = client.prepare(query, getCallOptions());
+    final FlightSqlClient client = getFlightClientWrapper().getSqlClient();
+    final FlightSqlClient.PreparedStatement preparedStatement = client.prepare(query, getCallOptions());
     return preparedStatement.execute(getCallOptions());
   }
 
