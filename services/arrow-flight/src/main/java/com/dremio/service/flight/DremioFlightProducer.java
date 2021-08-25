@@ -283,13 +283,13 @@ public class DremioFlightProducer implements FlightSqlProducer {
   }
 
   @Override
-  public void getStreamStatement(TicketStatementQuery commandStatementQuery,
+  public void getStreamStatement(TicketStatementQuery ticketStatementQuery,
                                  CallContext callContext,
                                  Ticket ticket,
                                  ServerStreamListener serverStreamListener) {
     try {
       final UserProtos.PreparedStatementHandle preparedStatementHandle =
-        UserProtos.PreparedStatementHandle.parseFrom(commandStatementQuery.getStatementHandle());
+        UserProtos.PreparedStatementHandle.parseFrom(ticketStatementQuery.getStatementHandle());
 
       runPreparedStatement(callContext, serverStreamListener, preparedStatementHandle);
     } catch (InvalidProtocolBufferException e) {
@@ -341,7 +341,6 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoCatalogs(
     CommandGetCatalogs commandGetCatalogs, CallContext callContext,
     FlightDescriptor flightDescriptor) {
-
     final Schema catalogsSchema = Schemas.GET_CATALOGS_SCHEMA;
     return getFlightInfoForFlightSqlCommands(commandGetCatalogs, flightDescriptor, catalogsSchema);
   }
