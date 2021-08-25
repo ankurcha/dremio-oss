@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.dremio.service.flight;
 
 import static java.util.Arrays.asList;
