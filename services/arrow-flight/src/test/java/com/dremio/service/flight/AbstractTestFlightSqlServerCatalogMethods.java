@@ -227,4 +227,201 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   public void testGetSchemasWithNonMatchingCatalog() throws Exception {
     testGetSchemas("NON_EXISTING_CATALOG", null, false);
   }
+
+  /**
+   * Retrieve a flightStream with schemas.
+   *
+   * @return a flight stream.
+   */
+  private FlightStream getSchemasFlightStream() {
+    final FlightInfo flightInfo = flightSqlClient.getSchemas(null, null, getCallOptions());
+    return flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
+      getCallOptions());
+  }
+
+  @Test
+  public void testGetSchemasClosingBeforeStreamIsRetrieved() throws Exception {
+    final FlightStream stream = getSchemasFlightStream();
+
+    stream.close();
+  }
+
+  @Test
+  public void testGetSchemasClosingAfterStreamIsRetrieved() throws Exception {
+    final FlightStream stream = getSchemasFlightStream();
+
+    while (stream.next()) {
+      // Draining the stream before closing.
+    }
+    //CHECKSTYLE:ON EmptyStatement|EmptyBlock
+
+    stream.close();
+  }
+
+  @Test
+  public void testGetSchemasCancelingBeforeStreamIsRetrieved() throws Exception {
+    try (final FlightStream stream = getSchemasFlightStream()) {
+      stream.cancel("Metadata retrieved canceled", new Exception("Testing query data retrieval cancellation."));
+    }
+  }
+
+  @Test
+  public void testGetSchemasCancelingAfterStreamIsRetrieved() throws Exception {
+    try (final FlightStream stream = getSchemasFlightStream()) {
+      while(stream.next()) {
+        // Draining the stream before cancellation.
+      }
+      stream.cancel("Metadata retrieved canceled", new Exception("Testing query data retrieval cancellation."));
+      stream.getRoot().clear();
+    }
+  }
+
+
+  /**
+   * Retrieve a flightStream with tables info.
+   *
+   * @return a flight stream.
+   */
+  private FlightStream getTablesFlightStream() {
+    final FlightInfo flightInfo = flightSqlClient.getTables(null, null, null,
+      null, false, getCallOptions());
+    return flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
+      getCallOptions());
+  }
+
+  @Test
+  public void testGetTablesClosingBeforeStreamIsRetrieved() throws Exception {
+    final FlightStream stream = getTablesFlightStream();
+
+    stream.close();
+  }
+
+  @Test
+  public void testGetTablesClosingAfterStreamIsRetrieved() throws Exception {
+    final FlightStream stream = getTablesFlightStream();
+
+    while (stream.next()) {
+      // Draining the stream before closing.
+    }
+    //CHECKSTYLE:ON EmptyStatement|EmptyBlock
+
+    stream.close();
+  }
+
+  @Test
+  public void testGetTablesCancelingBeforeStreamIsRetrieved() throws Exception {
+    try (final FlightStream stream = getTablesFlightStream()) {
+      stream.cancel("Metadata retrieved canceled", new Exception("Testing query data retrieval cancellation."));
+    }
+  }
+
+  @Test
+  public void testGetTablesCancelingAfterStreamIsRetrieved() throws Exception {
+    try (final FlightStream stream = getTablesFlightStream()) {
+      while(stream.next()) {
+        // Draining the stream before cancellation.
+
+      }
+      stream.cancel("Metadata retrieved canceled", new Exception("Testing query data retrieval cancellation."));
+      stream.getRoot().clear();
+    }
+  }
+
+  /**
+   * Retrieve a stream with table types.
+   *
+   * @return a flight stream.
+   */
+  private FlightStream getTableTypesFlightStream() {
+    final FlightInfo flightInfo = flightSqlClient.getTableTypes(getCallOptions());
+    return flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
+      getCallOptions());
+  }
+
+  @Test
+  public void testGetTablesTypesClosingBeforeStreamIsRetrieved() throws Exception {
+    final FlightStream stream = getTableTypesFlightStream();
+
+    stream.close();
+  }
+
+  @Test
+  public void testGetTablesTypesClosingAfterStreamIsRetrieved() throws Exception {
+    final FlightStream stream = getTableTypesFlightStream();
+
+    while (stream.next()) {
+      // Draining the stream before closing.
+    }
+    //CHECKSTYLE:ON EmptyStatement|EmptyBlock
+
+    stream.close();
+  }
+
+  @Test
+  public void testGetTablesTypesCancelingBeforeStreamIsRetrieved() throws Exception {
+    try (final FlightStream stream = getTableTypesFlightStream()) {
+      stream.cancel("Metadata retrieved canceled", new Exception("Testing query data retrieval cancellation."));
+    }
+  }
+
+  @Test
+  public void testGetTablesTypesCancelingAfterStreamIsRetrieved() throws Exception {
+    try (final FlightStream stream = getTableTypesFlightStream()) {
+      while (stream.next()) {
+        // Draining the stream before cancellation.
+
+      }
+      stream.cancel("Metadata retrieved canceled", new Exception("Testing query data retrieval cancellation."));
+      stream.getRoot().clear();
+    }
+  }
+
+  @Test
+  public void testGetCatalogsClosingBeforeStreamIsRetrieved() throws Exception {
+    final FlightStream stream = getCatalogsFlightStream();
+
+    stream.close();
+  }
+
+  /**
+   * Retrieve a flight a stream with catalologs info.
+   *
+   * @return flight stream.
+   */
+  private FlightStream getCatalogsFlightStream() {
+    final FlightInfo flightInfo = flightSqlClient.getCatalogs(getCallOptions());
+    return flightSqlClient.getStream(flightInfo.getEndpoints().get(0).getTicket(),
+      getCallOptions());
+  }
+
+  @Test
+  public void testGetCatalogsClosingAfterStreamIsRetrieved() throws Exception {
+    final FlightStream stream = getCatalogsFlightStream();
+
+    while (stream.next()) {
+      // Draining the stream before closing.
+    }
+    //CHECKSTYLE:ON EmptyStatement|EmptyBlock
+
+    stream.close();
+  }
+
+  @Test
+  public void testGetCatalogsCancelingBeforeStreamIsRetrieved() throws Exception {
+    try (final FlightStream stream = getCatalogsFlightStream()) {
+      stream.cancel("Metadata retrieved canceled", new Exception("Testing query data retrieval cancellation."));
+    }
+  }
+
+  @Test
+  public void testGetCatalogsCancelingAfterStreamIsRetrieved() throws Exception {
+    try (final FlightStream stream = getCatalogsFlightStream()) {
+      while (stream.next()) {
+        // Draining the stream before cancellation.
+
+      }
+      stream.cancel("Metadata retrieved canceled", new Exception("Testing query data retrieval cancellation."));
+      stream.getRoot().clear();
+    }
+  }
 }
