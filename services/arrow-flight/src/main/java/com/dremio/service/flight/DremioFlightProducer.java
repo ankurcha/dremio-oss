@@ -341,7 +341,9 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoCatalogs(
     CommandGetCatalogs commandGetCatalogs, CallContext callContext,
     FlightDescriptor flightDescriptor) {
-    return getFlightInfoForFlightSqlCommands(commandGetCatalogs, flightDescriptor, getSchemaCatalogs().getSchema());
+
+    final Schema catalogsSchema = Schemas.GET_CATALOGS_SCHEMA;
+    return getFlightInfoForFlightSqlCommands(commandGetCatalogs, flightDescriptor, catalogsSchema);
   }
 
   @Override
@@ -356,7 +358,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoSchemas(CommandGetSchemas commandGetSchemas,
                                          CallContext callContext,
                                          FlightDescriptor flightDescriptor) {
-    final Schema schema = getSchemaSchemas().getSchema();
+    final Schema schema = Schemas.GET_SCHEMAS_SCHEMA;
     return getFlightInfoForFlightSqlCommands(commandGetSchemas, flightDescriptor, schema);
   }
 
@@ -378,7 +380,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoTables(CommandGetTables commandGetTables,
                                         CallContext callContext,
                                         FlightDescriptor flightDescriptor) {
-    final Schema schema = getSchemaTables().getSchema();
+    final Schema schema = Schemas.GET_TABLES_SCHEMA;
 
     return getFlightInfoForFlightSqlCommands(commandGetTables, flightDescriptor, schema);
   }
@@ -397,7 +399,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoTableTypes(
     CommandGetTableTypes commandGetTableTypes, CallContext callContext,
     FlightDescriptor flightDescriptor) {
-    final Schema schema = getSchemaTableTypes().getSchema();
+    final Schema schema = Schemas.GET_TABLE_TYPES_SCHEMA;
 
     return getFlightInfoForFlightSqlCommands(commandGetTableTypes, flightDescriptor, schema);
   }
