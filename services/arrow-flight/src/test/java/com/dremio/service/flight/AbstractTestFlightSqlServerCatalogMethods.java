@@ -37,6 +37,9 @@ import com.dremio.exec.proto.UserProtos;
 import com.dremio.service.catalog.TableType;
 import com.google.common.collect.ImmutableList;
 
+/**
+ * Base class for Flight SQL catalog methods tests.
+ */
 public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlightQueryTest {
 
   private FlightSqlClient flightSqlClient;

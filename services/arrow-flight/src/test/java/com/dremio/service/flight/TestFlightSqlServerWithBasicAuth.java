@@ -40,6 +40,9 @@ public class TestFlightSqlServerWithBasicAuth {
       DremioFlightService.FLIGHT_LEGACY_AUTH_MODE);
   }
 
+  /**
+   * Query execution tests.
+   */
   public static class QueryExecutionTests extends AbstractTestFlightSqlServer {
     public QueryExecutionTests(ExecutionMode executionMode) {
       super(executionMode);
@@ -61,6 +64,9 @@ public class TestFlightSqlServerWithBasicAuth {
     }
   }
 
+  /**
+   * Catalog methods tests.
+   */
   public static class CatalogMethodsTests extends AbstractTestFlightSqlServerCatalogMethods {
     @BeforeClass
     public static void setup() throws Exception {

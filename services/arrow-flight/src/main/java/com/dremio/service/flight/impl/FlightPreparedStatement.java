@@ -26,7 +26,6 @@ import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.vector.types.pojo.Schema;
 
 import com.dremio.exec.proto.UserProtos;
-import com.dremio.service.flight.TicketContent.PreparedStatementTicket;
 import com.dremio.service.flight.protector.CancellableUserResponseHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Any;

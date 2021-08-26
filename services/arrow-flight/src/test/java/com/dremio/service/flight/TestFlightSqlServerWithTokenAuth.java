@@ -39,6 +39,9 @@ public class TestFlightSqlServerWithTokenAuth {
       FlightWorkManager.RunQueryResponseHandlerFactory.DEFAULT);
   }
 
+  /**
+   * Query execution tests.
+   */
   public static class QueryExecutionTests extends AbstractTestFlightSqlServer {
     public QueryExecutionTests(ExecutionMode executionMode) {
       super(executionMode);
@@ -61,6 +64,9 @@ public class TestFlightSqlServerWithTokenAuth {
     }
   }
 
+  /**
+   * Catalog methods tests.
+   */
   public static class CatalogMethodsTests extends AbstractTestFlightSqlServerCatalogMethods {
     @BeforeClass
     public static void setup() throws Exception {
