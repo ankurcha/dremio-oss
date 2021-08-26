@@ -26,6 +26,9 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+/**
+ * Base class for Flight SQL query execution tests.
+ */
 @RunWith(Parameterized.class)
 public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServer {
 
@@ -67,8 +70,9 @@ public abstract class AbstractTestFlightSqlServer extends AbstractTestFlightServ
         return executeStatement(query);
       case PREPARED_STATEMENT:
         return executePreparedStatement(query);
+      default:
+        throw new IllegalStateException();
     }
 
-    throw new IllegalStateException();
   }
 }

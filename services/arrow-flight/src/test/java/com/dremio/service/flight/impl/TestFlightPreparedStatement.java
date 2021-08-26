@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import org.apache.arrow.flight.FlightDescriptor;
@@ -40,7 +39,6 @@ import org.junit.rules.ExpectedException;
 import com.dremio.common.exceptions.UserException;
 import com.dremio.exec.proto.UserProtos;
 import com.dremio.exec.proto.UserProtos.PreparedStatementHandle;
-import com.dremio.service.flight.TicketContent;
 import com.dremio.service.flight.protector.CancellableUserResponseHandler;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Any;

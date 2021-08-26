@@ -28,8 +28,8 @@ import javax.inject.Provider;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightProducer;
-import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.flight.sql.FlightSqlProducer;
+import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -50,7 +50,6 @@ import com.dremio.service.flight.impl.RunQueryResponseHandler.BackpressureHandli
 import com.dremio.service.flight.impl.RunQueryResponseHandler.BasicResponseHandler;
 import com.dremio.service.flight.protector.CancellableUserResponseHandler;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 
 /**
  * Manager class for submitting jobs to a UserWorker and optionally returning the appropriate Dremio Flight
