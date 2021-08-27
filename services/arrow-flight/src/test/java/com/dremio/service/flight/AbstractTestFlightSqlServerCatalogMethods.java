@@ -249,7 +249,7 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   @Test
   public void testGetSchemasClosingAfterStreamIsRetrieved() throws Exception {
     final FlightStream stream = getSchemasFlightStream();
-
+    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
     while (stream.next()) {
       // Draining the stream before closing.
     }
@@ -268,6 +268,7 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   @Test
   public void testGetSchemasCancelingAfterStreamIsRetrieved() throws Exception {
     try (final FlightStream stream = getSchemasFlightStream()) {
+      //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
       while(stream.next()) {
         // Draining the stream before cancellation.
       }
@@ -299,7 +300,7 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   @Test
   public void testGetTablesClosingAfterStreamIsRetrieved() throws Exception {
     final FlightStream stream = getTablesFlightStream();
-
+    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
     while (stream.next()) {
       // Draining the stream before closing.
     }
@@ -318,6 +319,7 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   @Test
   public void testGetTablesCancelingAfterStreamIsRetrieved() throws Exception {
     try (final FlightStream stream = getTablesFlightStream()) {
+      //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
       while(stream.next()) {
         // Draining the stream before cancellation.
 
@@ -348,7 +350,7 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   @Test
   public void testGetTablesTypesClosingAfterStreamIsRetrieved() throws Exception {
     final FlightStream stream = getTableTypesFlightStream();
-
+    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
     while (stream.next()) {
       // Draining the stream before closing.
     }
@@ -367,6 +369,7 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   @Test
   public void testGetTablesTypesCancelingAfterStreamIsRetrieved() throws Exception {
     try (final FlightStream stream = getTableTypesFlightStream()) {
+      //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
       while (stream.next()) {
         // Draining the stream before cancellation.
 
@@ -397,7 +400,7 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   @Test
   public void testGetCatalogsClosingAfterStreamIsRetrieved() throws Exception {
     final FlightStream stream = getCatalogsFlightStream();
-
+    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
     while (stream.next()) {
       // Draining the stream before closing.
     }
@@ -416,6 +419,7 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   @Test
   public void testGetCatalogsCancelingAfterStreamIsRetrieved() throws Exception {
     try (final FlightStream stream = getCatalogsFlightStream()) {
+      //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
       while (stream.next()) {
         // Draining the stream before cancellation.
 
