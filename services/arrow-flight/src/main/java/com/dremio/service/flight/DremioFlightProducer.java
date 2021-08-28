@@ -32,8 +32,8 @@ import static org.apache.arrow.flight.sql.impl.FlightSql.CommandPreparedStatemen
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandPreparedStatementUpdate;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementQuery;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementUpdate;
+import static org.apache.arrow.flight.sql.impl.FlightSql.TicketStatementQuery;
 
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Provider;
@@ -47,7 +47,6 @@ import org.apache.arrow.flight.FlightConstants;
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
-import org.apache.arrow.flight.FlightProducer;
 import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.PutResult;
@@ -164,8 +163,12 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
   private FlightInfo getFlightInfoLegacy(CallContext callContext, FlightDescriptor flightDescriptor) {
     final UserSession session = getUserSessionFromCallContext(callContext);
+
     final FlightPreparedStatement flightPreparedStatement = flightWorkManager
       .createPreparedStatement(flightDescriptor, callContext::isCancelled, session);
+
+    flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
+
     return flightPreparedStatement.getFlightInfo(location);
   }
 
@@ -221,12 +224,11 @@ public class DremioFlightProducer implements FlightSqlProducer {
     ActionCreatePreparedStatementRequest actionCreatePreparedStatementRequest,
     CallContext callContext,
     StreamListener<Result> streamListener) {
-    final FlightDescriptor flightDescriptor =
-      FlightDescriptor.command(actionCreatePreparedStatementRequest.getQuery().getBytes(StandardCharsets.UTF_8));
+    final String query = actionCreatePreparedStatementRequest.getQuery();
 
     final UserSession session = getUserSessionFromCallContext(callContext);
     final FlightPreparedStatement flightPreparedStatement = flightWorkManager
-      .createPreparedStatement(flightDescriptor, callContext::isCancelled, session);
+      .createPreparedStatement(query, callContext::isCancelled, session);
 
     flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
 
@@ -256,21 +258,43 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoStatement(
     CommandStatementQuery commandStatementQuery,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("Statement not supported.").toRuntimeException();
+    final UserSession session = getUserSessionFromCallContext(callContext);
+
+    final FlightPreparedStatement flightPreparedStatement = flightWorkManager
+      .createPreparedStatement(commandStatementQuery.getQuery(), callContext::isCancelled, session);
+
+    flightPreparedStatementCache.put(flightPreparedStatement.getServerHandle(), flightPreparedStatement);
+
+    final TicketStatementQuery ticket =
+      TicketStatementQuery.newBuilder()
+        .setStatementHandle(flightPreparedStatement.getServerHandle().toByteString())
+        .build();
+
+    final Schema schema = flightPreparedStatement.getSchema();
+    return getFlightInfoForFlightSqlCommands(ticket, flightDescriptor, schema);
   }
 
   @Override
   public SchemaResult getSchemaStatement(
     CommandStatementQuery commandStatementQuery,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("Statement not supported.").toRuntimeException();
+    final FlightInfo info = this.getFlightInfo(callContext, flightDescriptor);
+    return new SchemaResult(info.getSchema());
   }
 
   @Override
-  public void getStreamStatement(CommandStatementQuery commandStatementQuery,
-                                 CallContext callContext, Ticket ticket,
+  public void getStreamStatement(TicketStatementQuery ticketStatementQuery,
+                                 CallContext callContext,
+                                 Ticket ticket,
                                  ServerStreamListener serverStreamListener) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("Statement not supported.").toRuntimeException();
+    try {
+      final UserProtos.PreparedStatementHandle preparedStatementHandle =
+        UserProtos.PreparedStatementHandle.parseFrom(ticketStatementQuery.getStatementHandle());
+
+      runPreparedStatement(callContext, serverStreamListener, preparedStatementHandle);
+    } catch (InvalidProtocolBufferException e) {
+      throw CallStatus.INTERNAL.toRuntimeException();
+    }
   }
 
   @Override
@@ -317,7 +341,8 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoCatalogs(
     CommandGetCatalogs commandGetCatalogs, CallContext callContext,
     FlightDescriptor flightDescriptor) {
-    return getFlightInfoForFlightSqlCommands(commandGetCatalogs, flightDescriptor, getSchemaCatalogs().getSchema());
+    final Schema catalogsSchema = Schemas.GET_CATALOGS_SCHEMA;
+    return getFlightInfoForFlightSqlCommands(commandGetCatalogs, flightDescriptor, catalogsSchema);
   }
 
   @Override
@@ -332,7 +357,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoSchemas(CommandGetSchemas commandGetSchemas,
                                          CallContext callContext,
                                          FlightDescriptor flightDescriptor) {
-    final Schema schema = getSchemaSchemas().getSchema();
+    final Schema schema = Schemas.GET_SCHEMAS_SCHEMA;
     return getFlightInfoForFlightSqlCommands(commandGetSchemas, flightDescriptor, schema);
   }
 
@@ -354,7 +379,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoTables(CommandGetTables commandGetTables,
                                         CallContext callContext,
                                         FlightDescriptor flightDescriptor) {
-    final Schema schema = getSchemaTables().getSchema();
+    final Schema schema = Schemas.GET_TABLES_SCHEMA;
 
     return getFlightInfoForFlightSqlCommands(commandGetTables, flightDescriptor, schema);
   }
@@ -373,7 +398,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoTableTypes(
     CommandGetTableTypes commandGetTableTypes, CallContext callContext,
     FlightDescriptor flightDescriptor) {
-    final Schema schema = getSchemaTableTypes().getSchema();
+    final Schema schema = Schemas.GET_TABLE_TYPES_SCHEMA;
 
     return getFlightInfoForFlightSqlCommands(commandGetTableTypes, flightDescriptor, schema);
   }
@@ -469,7 +494,8 @@ public class DremioFlightProducer implements FlightSqlProducer {
       command.is(CommandGetCatalogs.class) || command.is(CommandGetSchemas.class) ||
       command.is(CommandGetTables.class) || command.is(CommandGetTableTypes.class) ||
       command.is(CommandGetSqlInfo.class) || command.is(CommandGetPrimaryKeys.class) ||
-      command.is(CommandGetExportedKeys.class) || command.is(CommandGetImportedKeys.class);
+      command.is(CommandGetExportedKeys.class) || command.is(CommandGetImportedKeys.class) ||
+      command.is(TicketStatementQuery.class);
   }
 
   private boolean isFlightSqlCommand(byte[] bytes) {

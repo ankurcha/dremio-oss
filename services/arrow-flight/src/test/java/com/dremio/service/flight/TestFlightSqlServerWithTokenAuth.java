@@ -16,17 +16,22 @@
 
 package com.dremio.service.flight;
 
+import static com.dremio.service.flight.BaseFlightQueryTest.setupBaseFlightQueryTest;
+
 import org.apache.arrow.flight.CallOption;
 import org.junit.BeforeClass;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
 
 import com.dremio.service.flight.impl.FlightWorkManager;
 
 /**
  * Test FlightServer with bearer token authentication using FlightSql producer.
  */
-public class TestFlightSqlServerWithTokenAuth extends AbstractTestFlightSqlServer {
-  @BeforeClass
-  public static void setup() throws Exception {
+@RunWith(Enclosed.class)
+public class TestFlightSqlServerWithTokenAuth {
+
+  private static void setup() throws Exception {
     setupBaseFlightQueryTest(
       false,
       true,
@@ -34,14 +39,44 @@ public class TestFlightSqlServerWithTokenAuth extends AbstractTestFlightSqlServe
       FlightWorkManager.RunQueryResponseHandlerFactory.DEFAULT);
   }
 
-  @Override
-  protected String getAuthMode() {
-    return DremioFlightService.FLIGHT_AUTH2_AUTH_MODE;
+  /**
+   * Query execution tests.
+   */
+  public static class QueryExecutionTests extends AbstractTestFlightSqlServer {
+    public QueryExecutionTests(ExecutionMode executionMode) {
+      super(executionMode);
+    }
+
+    @BeforeClass
+    public static void setup() throws Exception {
+      TestFlightSqlServerWithTokenAuth.setup();
+    }
+
+    @Override
+    protected String getAuthMode() {
+      return DremioFlightService.FLIGHT_AUTH2_AUTH_MODE;
+    }
+
+    @Override
+    CallOption[] getCallOptions() {
+      final FlightClientUtils.FlightClientWrapper wrapper = getFlightClientWrapper();
+      return new CallOption[] {wrapper.getTokenCallOption()};
+    }
   }
 
-  @Override
-  CallOption[] getCallOptions() {
-    final FlightClientUtils.FlightClientWrapper wrapper = getFlightClientWrapper();
-    return new CallOption[] {wrapper.getTokenCallOption()};
+  /**
+   * Catalog methods tests.
+   */
+  public static class CatalogMethodsTests extends AbstractTestFlightSqlServerCatalogMethods {
+    @BeforeClass
+    public static void setup() throws Exception {
+      TestFlightSqlServerWithTokenAuth.setup();
+    }
+
+    @Override
+    CallOption[] getCallOptions() {
+      final FlightClientUtils.FlightClientWrapper wrapper = getFlightClientWrapper();
+      return new CallOption[] {wrapper.getTokenCallOption()};
+    }
   }
 }

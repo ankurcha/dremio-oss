@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 
 import org.apache.arrow.flight.FlightDescriptor;
@@ -28,6 +27,7 @@ import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.Ticket;
+import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
@@ -39,9 +39,9 @@ import org.junit.rules.ExpectedException;
 import com.dremio.common.exceptions.UserException;
 import com.dremio.exec.proto.UserProtos;
 import com.dremio.exec.proto.UserProtos.PreparedStatementHandle;
-import com.dremio.service.flight.TicketContent;
 import com.dremio.service.flight.protector.CancellableUserResponseHandler;
 import com.google.common.collect.ImmutableList;
+import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 
 import io.grpc.Status;
@@ -64,7 +64,6 @@ public class TestFlightPreparedStatement {
     .asRuntimeException();
 
   private static final String command = "command";
-  private static final FlightDescriptor flightDescriptor = FlightDescriptor.command(command.getBytes(StandardCharsets.UTF_8));
 
   private static final Schema schema = new Schema(Collections.singletonList(Field.nullable("test1", ArrowType.Bool.INSTANCE)));
   private static final PreparedStatementHandle preparedStatementHandle = PreparedStatementHandle
@@ -102,7 +101,7 @@ public class TestFlightPreparedStatement {
     thrown.expect(io.grpc.StatusRuntimeException.class);
     thrown.expectCause(isA(UserException.class));
 
-    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(flightDescriptor, command, mockHandler);
+    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(command, mockHandler);
 
     // Act
     flightPreparedStatement.getSchema();
@@ -116,7 +115,7 @@ public class TestFlightPreparedStatement {
     thrown.expect(io.grpc.StatusRuntimeException.class);
     thrown.expectCause(isA(UserException.class));
 
-    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(flightDescriptor, command, mockHandler);
+    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(command, mockHandler);
 
     // Act
     flightPreparedStatement.getSchema();
@@ -127,7 +126,7 @@ public class TestFlightPreparedStatement {
     // Arrange
     when(mockHandler.get()).thenReturn(response);
 
-    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(flightDescriptor, command, mockHandler);
+    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(command, mockHandler);
 
     // Act
     final Schema actual = flightPreparedStatement.getSchema();
@@ -144,7 +143,7 @@ public class TestFlightPreparedStatement {
     thrown.expect(io.grpc.StatusRuntimeException.class);
     thrown.expectCause(isA(UserException.class));
 
-    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(flightDescriptor, command, mockHandler);
+    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(command, mockHandler);
 
     // Act
     flightPreparedStatement.getFlightInfo(mockLocation);
@@ -158,7 +157,7 @@ public class TestFlightPreparedStatement {
     thrown.expect(io.grpc.StatusRuntimeException.class);
     thrown.expectCause(isA(UserException.class));
 
-    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(flightDescriptor, command, mockHandler);
+    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(command, mockHandler);
 
     // Act
     flightPreparedStatement.getFlightInfo(mockLocation);
@@ -168,15 +167,15 @@ public class TestFlightPreparedStatement {
   public void testGetFlightInfoSuccessful() {
     // Arrange
     when(mockHandler.get()).thenReturn(response);
-    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(flightDescriptor, command, mockHandler);
+    final FlightPreparedStatement flightPreparedStatement = new FlightPreparedStatement(command, mockHandler);
 
-    final TicketContent.PreparedStatementTicket preparedStatementTicketContent = TicketContent.PreparedStatementTicket.newBuilder()
-      .setQuery(command)
-      .setHandle(preparedStatementHandle)
+    final FlightSql.CommandPreparedStatementQuery command = FlightSql.CommandPreparedStatementQuery.newBuilder()
+      .setPreparedStatementHandle(preparedStatementHandle.toByteString())
       .build();
-
-    final Ticket ticket = new Ticket(preparedStatementTicketContent.toByteArray());
+    final FlightDescriptor flightDescriptor = FlightDescriptor.command(Any.pack(command).toByteArray());
+    final Ticket ticket = new Ticket(Any.pack(command).toByteArray());
     final FlightEndpoint flightEndpoint = new FlightEndpoint(ticket, mockLocation);
+
     final FlightInfo expected = new FlightInfo(schema, flightDescriptor, ImmutableList.of(flightEndpoint), -1, -1);
 
     // Act
