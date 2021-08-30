@@ -241,21 +241,21 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetSchemasClosingBeforeStreamIsRetrieved() throws Exception {
-    final FlightStream stream = getSchemasFlightStream();
-
-    stream.close();
+    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
+    try (final FlightStream stream = getSchemasFlightStream()) {
+      //CHECKSTYLE:ON EmptyStatement|EmptyBlock
+    }
   }
 
   @Test
   public void testGetSchemasClosingAfterStreamIsRetrieved() throws Exception {
-    final FlightStream stream = getSchemasFlightStream();
-    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
-    while (stream.next()) {
-      // Draining the stream before closing.
+    try (final FlightStream stream = getSchemasFlightStream()) {
+      //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
+      while (stream.next()) {
+        // Draining the stream before closing.
+      }
+      //CHECKSTYLE:ON EmptyStatement|EmptyBlock
     }
-    //CHECKSTYLE:ON EmptyStatement|EmptyBlock
-
-    stream.close();
   }
 
   @Test
@@ -292,9 +292,11 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetTablesClosingBeforeStreamIsRetrieved() throws Exception {
-    final FlightStream stream = getTablesFlightStream();
+    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
 
-    stream.close();
+    try (final FlightStream stream = getTablesFlightStream()) {
+      //CHECKSTYLE:ON EmptyStatement|EmptyBlock
+    }
   }
 
   @Test
@@ -342,9 +344,10 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetTablesTypesClosingBeforeStreamIsRetrieved() throws Exception {
-    final FlightStream stream = getTableTypesFlightStream();
-
-    stream.close();
+    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
+    try (FlightStream stream = getTableTypesFlightStream()) {
+      //CHECKSTYLE:ON EmptyStatement|EmptyBlock
+    }
   }
 
   @Test
@@ -381,9 +384,10 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
   @Test
   public void testGetCatalogsClosingBeforeStreamIsRetrieved() throws Exception {
-    final FlightStream stream = getCatalogsFlightStream();
-
-    stream.close();
+    //CHECKSTYLE:OFF EmptyStatement|EmptyBlock
+    try (final FlightStream stream = getCatalogsFlightStream()) {
+      //CHECKSTYLE:ON EmptyStatement|EmptyBlock
+    }
   }
 
   /**
