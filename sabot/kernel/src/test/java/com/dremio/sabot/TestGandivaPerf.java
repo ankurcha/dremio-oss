@@ -189,14 +189,26 @@ public class TestGandivaPerf extends BaseTestOperator {
   }
 
   @Test
-  public void testProjectSha() throws Exception {
-    int delta = compareProject(TpchTable.CUSTOMER, 2, "hashsha1(c_custkey)");
+  public void testProjectSha1Numeric() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "hashsha1(c_custkey)");
     Assert.assertTrue(delta > 0);
-    delta = compareProject(TpchTable.CUSTOMER, 2, "hashsha1(c_name)");
+  }
+
+  @Test
+  public void testProjectSha1Varchar() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "hashsha1(c_name)");
     Assert.assertTrue(delta > 0);
-    delta = compareProject(TpchTable.CUSTOMER, 2, "hashSHA256(c_nationkey)");
+  }
+
+  @Test
+  public void testProjectSha256Numeric() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "hashSHA256(c_nationkey)");
     Assert.assertTrue(delta > 0);
-    delta = compareProject(TpchTable.CUSTOMER, 2, "hashSHA256(c_name)");
+  }
+
+  @Test
+  public void testProjectSha256Varchar() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "hashSHA256(c_name)");
     Assert.assertTrue(delta > 0);
   }
 
@@ -237,26 +249,32 @@ public class TestGandivaPerf extends BaseTestOperator {
   }
 
   @Test
-  public void testProjectTanSinh() throws Exception {
-    int delta = compareProject(TpchTable.CUSTOMER, 4, "tan(c_acctbal)");
-    Assert.assertTrue(delta > 0);
-    delta = compareProject(TpchTable.CUSTOMER, 4, "sinh(c_acctbal)");
+  public void testProjectSinh() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "sinh(c_acctbal)");
     Assert.assertTrue(delta > 0);
   }
 
   @Test
-  public void testProjectCoshRadians() throws Exception {
-    int delta = compareProject(TpchTable.CUSTOMER, 4, "cosh(c_acctbal)");
-    Assert.assertTrue(delta > 0);
-    delta = compareProject(TpchTable.CUSTOMER, 4, "radians(c_acctbal)");
+  public void testProjectTan() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "tan(c_acctbal)");
     Assert.assertTrue(delta > 0);
   }
 
   @Test
-  public void testProjectSinCos() throws Exception {
+  public void testProjectCosh() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "cosh(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectCos() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "cos(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectSin() throws Exception {
     int delta = compareProject(TpchTable.CUSTOMER, 6, "sin(c_acctbal)");
-    Assert.assertTrue(delta > 0);
-    delta = compareProject(TpchTable.CUSTOMER, 6, "cos(c_acctbal)");
     Assert.assertTrue(delta > 0);
   }
 
@@ -269,18 +287,6 @@ public class TestGandivaPerf extends BaseTestOperator {
   @Test
   public void testProjectCastIntFromBigint() throws Exception {
     int delta = compareProject(TpchTable.CUSTOMER, 6, "castINT(c_acctbal)");
-    Assert.assertTrue(delta > 0);
-  }
-
-  @Test
-  public void testProjectCastBoolean() throws Exception {
-    int delta = compareProject(TpchTable.CUSTOMER, 6, "castBOOLEAN(c_name)");
-    Assert.assertTrue(delta > 0);
-  }
-
-  @Test
-  public void testProjectCastBit() throws Exception {
-    int delta = compareProject(TpchTable.CUSTOMER, 6, "castBIT(c_name)");
     Assert.assertTrue(delta > 0);
   }
 
@@ -327,18 +333,26 @@ public class TestGandivaPerf extends BaseTestOperator {
   }
 
   @Test
-  public void testProjectToTimeToTimestamp() throws Exception {
+  public void testProjectToTimeFromSeconds() throws Exception {
     int delta = compareProject(TpchTable.CUSTOMER, 4, "to_time(c_custkey)");
-    Assert.assertTrue(delta > 0);
-    delta = compareProject(TpchTable.CUSTOMER, 4, "to_timestamp(c_custkey)");
     Assert.assertTrue(delta > 0);
   }
 
   @Test
-  public void testProjectCastVarbinary() throws Exception {
-    int delta = compareProject(TpchTable.CUSTOMER, 4, "cast(c_custkey as VARBINARY(200))");
+  public void testProjectToTimestampFromSeconds() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 4, "to_timestamp(c_custkey)");
     Assert.assertTrue(delta > 0);
-    delta = compareProject(TpchTable.CUSTOMER, 4, "cast(c_name as VARBINARY(10500))");
+  }
+
+  @Test
+  public void testProjectCastVarbinaryFromNumeric() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_custkey as VARBINARY(200))");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectCastVarbinaryFromVarchar() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_name as VARBINARY(10500))");
     Assert.assertTrue(delta > 0);
   }
 
