@@ -119,7 +119,9 @@ public class TestGandivaPerf extends BaseTestOperator {
 
     int deltaPcnt = (int)(((javaTime - gandivaTime) * 100) / javaTime);
 
-    System.out.println("delta for [" + expr + "] is " + deltaPcnt + "%");
+    System.out.println("Gandiva execution time: " + gandivaTime + " ms");
+    System.out.println("Java execution time: " + javaTime + " ms");
+    System.out.println("Delta for [" + expr + "] is " + deltaPcnt + "%");
     return deltaPcnt;
   }
 
@@ -187,6 +189,177 @@ public class TestGandivaPerf extends BaseTestOperator {
   }
 
   @Test
+  public void testProjectSha() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "sha(c_custkey)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "sha(c_name)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "sha2(c_custkey)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "sha2(c_name)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectLastday() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "last_day(cast(c_date as DATE))");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectExtractDate() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "year(cast(c_date as DATE))");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "month(cast(c_date as DATE))");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "weekofyear(cast(c_date as DATE))");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "day(cast(c_date as DATE))");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "hour(cast(c_date as DATE))");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "minute(cast(c_date as DATE))");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "second(cast(c_date as DATE))");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectTrigonometric() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "sin(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cos(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "tan(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "sinh(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cosh(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "radians(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "degrees"
+      + "(c_acctbal)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectCastVarchar() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_acctbal as VARCHAR(200))");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cast(cast(c_name as VARBINARY(1000)) AS VARCHAR(1000))");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectCastNumeric() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_acctbal as INTERVALDAY)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_acctbal as INTERVALYEAR)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_acctbal as FLOAT)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_acctbal as DOUBLE)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_acctbal as INTEGER)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectCastBitAndBoolean() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_name as BOOLEAN)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_name as BIT)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectLeftAndRightLpadAndRpad() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "left(c_address, 10)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "right(c_address, 10)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "rpad(c_address, 200, 'xxx')");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "lpad(c_address, 200, 'xxx')");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectStrpos() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "strpos(c_address, 'e')");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectConvertFromAndConvertTo() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "convert_to(c_name, 'UTF-8')");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "convert_from(convert_to(c_name, 'UTF-8'), 'UTF-8')");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectToTimeToTimestamp() throws Exception {
+    int delta = compareProject(TpchTable.NATION, 6, "to_time(n_nationKey)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.NATION, 6, "to_timestamp(n_nationKey)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectCastVarbinary() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_custkey as VARBINARY(200))");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "cast(c_name as VARBINARY(10500))");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectBin() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "bin(c_custkey)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectBase64() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "base64(c_name)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectAsciiSpaceAndRepeat() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "ascii(c_name)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "space(c_custkey)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "repeat(c_custkey, 2)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectBytesSubstring() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "bytes_substr(cast(c_custkey as VARBINARY(200)), 2, 5)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectUpperLowerInitcap() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "upper(c_comment)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "lower(c_comment)");
+    Assert.assertTrue(delta > 0);
+    delta = compareProject(TpchTable.CUSTOMER, 6, "initcap(c_comment)");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
+  public void testProjectRegexpReplace() throws Exception {
+    int delta = compareProject(TpchTable.CUSTOMER, 6, "regexp_replace(c_comment, 'a', 'b')");
+    Assert.assertTrue(delta > 0);
+  }
+
+  @Test
   public void testFilterSimple() throws Exception {
     int delta = compareFilter(TpchTable.CUSTOMER, 6, "c_custkey < c_nationkey");
     Assert.assertTrue(delta > 0);
@@ -198,4 +371,9 @@ public class TestGandivaPerf extends BaseTestOperator {
     Assert.assertTrue(delta > 0);
   }
 
+  @Test
+  public void testFilterILike() throws Exception {
+    int delta = compareFilter(TpchTable.CUSTOMER, 6, "ilike(c_name, '%PROMO%')");
+    Assert.assertTrue(delta > 0);
+  }
 }
