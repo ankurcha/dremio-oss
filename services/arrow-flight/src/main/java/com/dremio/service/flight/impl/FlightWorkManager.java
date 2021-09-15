@@ -225,17 +225,17 @@ public class FlightWorkManager {
 
     if (commandGetTables.hasSchemaFilterPattern()) {
       builder.setSchemaNameFilter(UserProtos.LikeFilter.newBuilder()
-        .setPattern(commandGetTables.getSchemaFilterPattern().getValue()).build());
+        .setPattern(commandGetTables.getSchemaFilterPattern()).build());
     }
 
     if (commandGetTables.hasTableNameFilterPattern()) {
       builder.setTableNameFilter(UserProtos.LikeFilter.newBuilder()
-        .setPattern(commandGetTables.getTableNameFilterPattern().getValue()).build());
+        .setPattern(commandGetTables.getTableNameFilterPattern()).build());
     }
 
     if (commandGetTables.hasCatalog()) {
       builder.setCatalogNameFilter(UserProtos.LikeFilter.newBuilder()
-        .setPattern(commandGetTables.getCatalog().getValue()).build());
+        .setPattern(commandGetTables.getCatalog()).build());
     }
 
     if (!commandGetTables.getTableTypesList().isEmpty()) {
