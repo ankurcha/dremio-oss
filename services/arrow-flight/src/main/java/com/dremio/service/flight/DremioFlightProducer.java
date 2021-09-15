@@ -34,6 +34,7 @@ import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementQuery;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementUpdate;
 import static org.apache.arrow.flight.sql.impl.FlightSql.TicketStatementQuery;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Provider;
@@ -367,9 +368,9 @@ public class DremioFlightProducer implements FlightSqlProducer {
                                ServerStreamListener serverStreamListener) {
     final UserSession session = getUserSessionFromCallContext(callContext);
 
-    String catalog = commandGetSchemas.hasCatalog() ? commandGetSchemas.getCatalog().getValue() : null;
+    String catalog = commandGetSchemas.hasCatalog() ? commandGetSchemas.getCatalog() : null;
     String schemaFilterPattern =
-      commandGetSchemas.hasSchemaFilterPattern() ? commandGetSchemas.getSchemaFilterPattern().getValue() : null;
+      commandGetSchemas.hasSchemaFilterPattern() ? commandGetSchemas.getSchemaFilterPattern() : null;
 
     flightWorkManager.getSchemas(
       catalog, schemaFilterPattern, serverStreamListener, allocator, callContext::isCancelled, session);
@@ -414,7 +415,8 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoPrimaryKeys(
     CommandGetPrimaryKeys commandGetPrimaryKeys,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetPrimaryKeys not supported.").toRuntimeException();
+    final Schema schema = Schemas.GET_PRIMARY_KEYS_SCHEMA;
+    return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
   }
 
   @Override
@@ -428,7 +430,8 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoExportedKeys(
     CommandGetExportedKeys commandGetExportedKeys,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetExportedKeys not supported.").toRuntimeException();
+    final Schema schema = Schemas.GET_IMPORTED_AND_EXPORTED_KEYS_SCHEMA;
+    return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
   }
 
   @Override
@@ -443,7 +446,8 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoImportedKeys(
     CommandGetImportedKeys commandGetImportedKeys,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetImportedKeys not supported.").toRuntimeException();
+    final Schema schema = Schemas.GET_IMPORTED_AND_EXPORTED_KEYS_SCHEMA;
+    return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
   }
 
   @Override

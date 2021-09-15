@@ -117,7 +117,7 @@
     <parquet.version>1.12.0-202012300655090309-fc8298d</parquet.version>
     <pf4j.version>3.0.1</pf4j.version>
     <postgresql.version>42.2.18</postgresql.version>
-    <protobuf.version>3.9.1</protobuf.version>
+    <protobuf.version>3.17.3</protobuf.version>
     <protostuff.version>1.4.4</protostuff.version>
     <scott-data-hsqldb.version>0.1</scott-data-hsqldb.version>
     <slf4j.version>1.7.28</slf4j.version>
