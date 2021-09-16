@@ -353,9 +353,7 @@ public class FlightWorkManager {
    * @return          the Arrow type that is equivalent to dremio type.
    */
   private static ArrowType getArrowType(final int dataType, final int precision, final int scale) {
-    final ArrowType type =
-      JdbcToArrowUtils.getArrowTypeFromJdbcType(new JdbcFieldInfo(dataType, precision, scale), JdbcToArrowUtils.getUtcCalendar());
-    return isNull(type) ? ArrowType.Utf8.INSTANCE : type;
+    return JdbcToArrowUtils.getArrowTypeFromJdbcType(new JdbcFieldInfo(dataType, precision, scale), JdbcToArrowUtils.getUtcCalendar());
   }
 
   /**
