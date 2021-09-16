@@ -380,7 +380,12 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoTables(CommandGetTables commandGetTables,
                                         CallContext callContext,
                                         FlightDescriptor flightDescriptor) {
-    final Schema schema = Schemas.GET_TABLES_SCHEMA;
+    final Schema schema;
+    if (commandGetTables.getIncludeSchema()) {
+      schema = Schemas.GET_TABLES_SCHEMA;
+    } else {
+      schema = Schemas.GET_TABLES_SCHEMA_NO_SCHEMA;
+    }
 
     return getFlightInfoForFlightSqlCommands(commandGetTables, flightDescriptor, schema);
   }
