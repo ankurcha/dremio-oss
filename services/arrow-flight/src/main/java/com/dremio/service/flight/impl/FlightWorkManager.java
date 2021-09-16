@@ -18,7 +18,6 @@ package com.dremio.service.flight.impl;
 
 import static com.dremio.common.types.Types.getJdbcTypeCode;
 import static com.google.protobuf.ByteString.copyFrom;
-import static java.util.Objects.isNull;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -239,24 +238,7 @@ public class FlightWorkManager {
     final UserBitShared.ExternalId runExternalId = ExternalIdHelper.generateExternalId();
     final UserProtos.GetTablesReq.Builder builder = UserProtos.GetTablesReq.newBuilder();
 
-    if (commandGetTables.hasSchemaFilterPattern()) {
-      builder.setSchemaNameFilter(UserProtos.LikeFilter.newBuilder()
-        .setPattern(commandGetTables.getSchemaFilterPattern()).build());
-    }
-
-    if (commandGetTables.hasTableNameFilterPattern()) {
-      builder.setTableNameFilter(UserProtos.LikeFilter.newBuilder()
-        .setPattern(commandGetTables.getTableNameFilterPattern()).build());
-    }
-
-    if (commandGetTables.hasCatalog()) {
-      builder.setCatalogNameFilter(UserProtos.LikeFilter.newBuilder()
-        .setPattern(commandGetTables.getCatalog()).build());
-    }
-
-    if (!commandGetTables.getTableTypesList().isEmpty()) {
-      builder.addAllTableTypeFilter(commandGetTables.getTableTypesList());
-    }
+    setParameterForGetTablesExecution(commandGetTables, builder);
 
     final UserRequest userRequest =
       new UserRequest(UserProtos.RpcType.GET_TABLES, builder.build());
@@ -273,38 +255,7 @@ public class FlightWorkManager {
     final Map<String, List<Field>> tableToFields = new HashMap<>();
 
     if (includeSchema) {
-      final UserBitShared.ExternalId columnRunExternalId = ExternalIdHelper.generateExternalId();
-
-      final UserProtos.GetColumnsReq.Builder columnBuilder = UserProtos.GetColumnsReq.newBuilder();
-      final UserRequest columnsRequest = new UserRequest(UserProtos.RpcType.GET_COLUMNS, columnBuilder.build());
-
-      final CancellableUserResponseHandler<UserProtos.GetColumnsResp> columnResponseHandler =
-        new CancellableUserResponseHandler<>(runExternalId, userSession, workerProvider, isRequestCancelled,
-          UserProtos.GetColumnsResp.class);
-
-      workerProvider.get().submitWork(columnRunExternalId, userSession, columnResponseHandler,
-        columnsRequest, TerminationListenerRegistry.NOOP);
-
-      final UserProtos.GetColumnsResp getColumnsResp = columnResponseHandler.get();
-
-      final IntStream columnsRange = IntStream.range(0, getColumnsResp.getColumnsCount());
-
-      columnsRange.forEach(i -> {
-        final UserProtos.ColumnMetadata columns = getColumnsResp.getColumns(i);
-
-        final String tableName = columns.getTableName();
-        final List<Field> fields = tableToFields.computeIfAbsent(tableName, tableName_ -> new ArrayList<>());
-
-        final Field field = new Field(
-          columns.getColumnName(),
-          new FieldType(
-            columns.getIsNullable(),
-            getArrowType(getJdbcTypeCode(columns.getDataType()),
-              columns.getNumericPrecision(), columns.getNumericScale()),
-            null),
-          null);
-        fields.add(field);
-      });
+      runGetColumns(isRequestCancelled, userSession, runExternalId, tableToFields);
     }
 
     final Schema schema = includeSchema ? FlightSqlProducer.Schemas.GET_TABLES_SCHEMA :
@@ -342,6 +293,77 @@ public class FlightWorkManager {
       listener.putNext();
       listener.completed();
     }
+  }
+
+  /**
+   * Set in the Tables request object the parameter that user passed via CommandGetTables.
+   *
+   * @param commandGetTables The command sent by the user.
+   * @param builder          A builder which holds information that will be used to execute the job.
+   */
+  private void setParameterForGetTablesExecution(FlightSql.CommandGetTables commandGetTables, UserProtos.GetTablesReq.Builder builder) {
+    if (commandGetTables.hasSchemaFilterPattern()) {
+      builder.setSchemaNameFilter(UserProtos.LikeFilter.newBuilder()
+        .setPattern(commandGetTables.getSchemaFilterPattern()).build());
+    }
+
+    if (commandGetTables.hasTableNameFilterPattern()) {
+      builder.setTableNameFilter(UserProtos.LikeFilter.newBuilder()
+        .setPattern(commandGetTables.getTableNameFilterPattern()).build());
+    }
+
+    if (commandGetTables.hasCatalog()) {
+      builder.setCatalogNameFilter(UserProtos.LikeFilter.newBuilder()
+        .setPattern(commandGetTables.getCatalog()).build());
+    }
+
+    if (!commandGetTables.getTableTypesList().isEmpty()) {
+      builder.addAllTableTypeFilter(commandGetTables.getTableTypesList());
+    }
+  }
+
+  /**
+   * Run the GET_COLUMNS jobs when includeSchema is true.
+   *
+   * @param isRequestCancelled  A supplier to evaluate if the client cancelled the request.
+   * @param userSession         The session for the user which made the request.
+   * @param runExternalId       The id of the query to be run.
+   * @param tableToFields       A map with table and its fields.
+   */
+  private void runGetColumns(Supplier<Boolean> isRequestCancelled, UserSession userSession,
+                         UserBitShared.ExternalId runExternalId, Map<String, List<Field>> tableToFields) {
+    final UserBitShared.ExternalId columnRunExternalId = ExternalIdHelper.generateExternalId();
+
+    final UserProtos.GetColumnsReq.Builder columnBuilder = UserProtos.GetColumnsReq.newBuilder();
+    final UserRequest columnsRequest = new UserRequest(UserProtos.RpcType.GET_COLUMNS, columnBuilder.build());
+
+    final CancellableUserResponseHandler<UserProtos.GetColumnsResp> columnResponseHandler =
+      new CancellableUserResponseHandler<>(runExternalId, userSession, workerProvider, isRequestCancelled,
+        UserProtos.GetColumnsResp.class);
+
+    workerProvider.get().submitWork(columnRunExternalId, userSession, columnResponseHandler,
+      columnsRequest, TerminationListenerRegistry.NOOP);
+
+    final UserProtos.GetColumnsResp getColumnsResp = columnResponseHandler.get();
+
+    final IntStream columnsRange = IntStream.range(0, getColumnsResp.getColumnsCount());
+
+    columnsRange.forEach(i -> {
+      final UserProtos.ColumnMetadata columns = getColumnsResp.getColumns(i);
+
+      final String tableName = columns.getTableName();
+      final List<Field> fields = tableToFields.computeIfAbsent(tableName, tableName_ -> new ArrayList<>());
+
+      final Field field = new Field(
+        columns.getColumnName(),
+        new FieldType(
+          columns.getIsNullable(),
+          getArrowType(getJdbcTypeCode(columns.getDataType()),
+            columns.getNumericPrecision(), columns.getNumericScale()),
+          null),
+        null);
+      fields.add(field);
+    });
   }
 
   /**
