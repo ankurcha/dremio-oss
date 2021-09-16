@@ -295,7 +295,6 @@ public class FlightWorkManager {
         final String tableName = columns.getTableName();
         final List<Field> fields = tableToFields.computeIfAbsent(tableName, tableName_ -> new ArrayList<>());
 
-
         final Field field = new Field(
           columns.getColumnName(),
           new FieldType(
@@ -306,63 +305,42 @@ public class FlightWorkManager {
           null);
         fields.add(field);
       });
+    }
 
-      try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FlightSqlProducer.Schemas.GET_TABLES_SCHEMA,
-        allocator)) {
-        listener.start(vectorSchemaRoot);
+    final Schema schema = includeSchema ? FlightSqlProducer.Schemas.GET_TABLES_SCHEMA :
+      FlightSqlProducer.Schemas.GET_TABLES_SCHEMA_NO_SCHEMA;
 
-        vectorSchemaRoot.allocateNew();
-        VarCharVector catalogNameVector = (VarCharVector) vectorSchemaRoot.getVector("catalog_name");
-        VarCharVector schemaNameVector = (VarCharVector) vectorSchemaRoot.getVector("schema_name");
-        VarCharVector tableNameVector = (VarCharVector) vectorSchemaRoot.getVector("table_name");
-        VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
-        VarBinaryVector schemaVector = (VarBinaryVector) vectorSchemaRoot.getVector("table_schema");
+    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema,allocator)) {
+      listener.start(vectorSchemaRoot);
 
-        final int tablesCount = getTablesResp.getTablesCount();
-        final IntStream range = IntStream.range(0, tablesCount);
+      vectorSchemaRoot.allocateNew();
+      VarCharVector catalogNameVector = (VarCharVector) vectorSchemaRoot.getVector("catalog_name");
+      VarCharVector schemaNameVector = (VarCharVector) vectorSchemaRoot.getVector("schema_name");
+      VarCharVector tableNameVector = (VarCharVector) vectorSchemaRoot.getVector("table_name");
+      VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+      VarBinaryVector schemaVector = (VarBinaryVector) vectorSchemaRoot.getVector("table_schema");
 
-        range.forEach(i -> {
-          final UserProtos.TableMetadata tables = getTablesResp.getTables(i);
-          catalogNameVector.setSafe(i, new Text(tables.getCatalogName()));
-          schemaNameVector.setSafe(i, new Text(tables.getSchemaName()));
-          tableTypeVector.setSafe(i, new Text(tables.getType()));
+      final int tablesCount = getTablesResp.getTablesCount();
+      final IntStream range = IntStream.range(0, tablesCount);
 
-          final String tableName = tables.getTableName();
-          tableNameVector.setSafe(i, new Text(tableName));
+      range.forEach(i -> {
+        final UserProtos.TableMetadata tables = getTablesResp.getTables(i);
+        catalogNameVector.setSafe(i, new Text(tables.getCatalogName()));
+        schemaNameVector.setSafe(i, new Text(tables.getSchemaName()));
+        tableTypeVector.setSafe(i, new Text(tables.getType()));
 
-          final Schema schema = new Schema(tableToFields.get(tableName));
-          schemaVector.setSafe(i, copyFrom(MessageSerializer.serializeMetadata(schema, IpcOption.DEFAULT)).toByteArray());
-        });
-        vectorSchemaRoot.setRowCount(tablesCount);
-        listener.putNext();
-        listener.completed();
-      }
-    } else {
-      try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(
-        FlightSqlProducer.Schemas.GET_TABLES_SCHEMA_NO_SCHEMA, allocator)) {
-        listener.start(vectorSchemaRoot);
+        final String tableName = tables.getTableName();
+        tableNameVector.setSafe(i, new Text(tableName));
 
-        vectorSchemaRoot.allocateNew();
-        VarCharVector catalogNameVector = (VarCharVector) vectorSchemaRoot.getVector("catalog_name");
-        VarCharVector schemaNameVector = (VarCharVector) vectorSchemaRoot.getVector("schema_name");
-        VarCharVector tableNameVector = (VarCharVector) vectorSchemaRoot.getVector("table_name");
-        VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+        if (includeSchema) {
+          final Schema columnSchema = new Schema(tableToFields.get(tableName));
+          schemaVector.setSafe(i, copyFrom(MessageSerializer.serializeMetadata(columnSchema, IpcOption.DEFAULT)).toByteArray());
+        }
+      });
 
-        final int tablesCount = getTablesResp.getTablesCount();
-        final IntStream range = IntStream.range(0, tablesCount);
-
-        range.forEach(i -> {
-          final UserProtos.TableMetadata tables = getTablesResp.getTables(i);
-          catalogNameVector.setSafe(i, new Text(tables.getCatalogName()));
-          schemaNameVector.setSafe(i, new Text(tables.getSchemaName()));
-          tableNameVector.setSafe(i, new Text(tables.getTableName()));
-          tableTypeVector.setSafe(i, new Text(tables.getType()));
-        });
-
-        vectorSchemaRoot.setRowCount(tablesCount);
-        listener.putNext();
-        listener.completed();
-      }
+      vectorSchemaRoot.setRowCount(tablesCount);
+      listener.putNext();
+      listener.completed();
     }
   }
 
