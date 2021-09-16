@@ -16,23 +16,39 @@
 
 package com.dremio.service.flight.impl;
 
+import static com.dremio.common.types.Types.getJdbcTypeCode;
+import static com.google.protobuf.ByteString.copyFrom;
+import static java.util.Objects.isNull;
+
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.inject.Provider;
 
+import org.apache.arrow.adapter.jdbc.JdbcFieldInfo;
+import org.apache.arrow.adapter.jdbc.JdbcToArrowUtils;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightProducer;
 import org.apache.arrow.flight.sql.FlightSqlProducer;
 import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.message.IpcOption;
+import org.apache.arrow.vector.ipc.message.MessageSerializer;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 
 import com.dremio.common.utils.protos.ExternalIdHelper;
@@ -253,31 +269,115 @@ public class FlightWorkManager {
 
     final UserProtos.GetTablesResp getTablesResp = responseHandler.get();
 
-    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FlightSqlProducer.Schemas.GET_TABLES_SCHEMA,
-      allocator)) {
-      listener.start(vectorSchemaRoot);
+    final boolean includeSchema = commandGetTables.getIncludeSchema();
+    final Map<String, List<Field>> tableToFields = new HashMap<>();
 
-      vectorSchemaRoot.allocateNew();
-      VarCharVector catalogNameVector = (VarCharVector) vectorSchemaRoot.getVector("catalog_name");
-      VarCharVector schemaNameVector = (VarCharVector) vectorSchemaRoot.getVector("schema_name");
-      VarCharVector tableNameVector = (VarCharVector) vectorSchemaRoot.getVector("table_name");
-      VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+    if (includeSchema) {
+      final UserBitShared.ExternalId columnRunExternalId = ExternalIdHelper.generateExternalId();
 
-      final int tablesCount = getTablesResp.getTablesCount();
-      final IntStream range = IntStream.range(0, tablesCount);
+      final UserProtos.GetColumnsReq.Builder columnBuilder = UserProtos.GetColumnsReq.newBuilder();
+      final UserRequest columnsRequest = new UserRequest(UserProtos.RpcType.GET_COLUMNS, columnBuilder.build());
 
-      range.forEach(i ->{
-        final UserProtos.TableMetadata tables = getTablesResp.getTables(i);
-        catalogNameVector.setSafe(i, new Text(tables.getCatalogName()));
-        schemaNameVector.setSafe(i, new Text(tables.getSchemaName()));
-        tableNameVector.setSafe(i, new Text(tables.getTableName()));
-        tableTypeVector.setSafe(i, new Text(tables.getType()));
+      final CancellableUserResponseHandler<UserProtos.GetColumnsResp> columnResponseHandler =
+        new CancellableUserResponseHandler<>(runExternalId, userSession, workerProvider, isRequestCancelled,
+          UserProtos.GetColumnsResp.class);
+
+      workerProvider.get().submitWork(columnRunExternalId, userSession, columnResponseHandler,
+        columnsRequest, TerminationListenerRegistry.NOOP);
+
+      final UserProtos.GetColumnsResp getColumnsResp = columnResponseHandler.get();
+
+      final IntStream columnsRange = IntStream.range(0, getColumnsResp.getColumnsCount());
+
+      columnsRange.forEach(i -> {
+        final UserProtos.ColumnMetadata columns = getColumnsResp.getColumns(i);
+
+        final String tableName = columns.getTableName();
+        final List<Field> fields = tableToFields.computeIfAbsent(tableName, tableName_ -> new ArrayList<>());
+
+
+        final Field field = new Field(
+          columns.getColumnName(),
+          new FieldType(
+            columns.getIsNullable(),
+            getArrowType(getJdbcTypeCode(columns.getDataType()),
+              columns.getNumericPrecision(), columns.getNumericScale()),
+            null),
+          null);
+        fields.add(field);
       });
 
-      vectorSchemaRoot.setRowCount(tablesCount);
-      listener.putNext();
-      listener.completed();
+      try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FlightSqlProducer.Schemas.GET_TABLES_SCHEMA,
+        allocator)) {
+        listener.start(vectorSchemaRoot);
+
+        vectorSchemaRoot.allocateNew();
+        VarCharVector catalogNameVector = (VarCharVector) vectorSchemaRoot.getVector("catalog_name");
+        VarCharVector schemaNameVector = (VarCharVector) vectorSchemaRoot.getVector("schema_name");
+        VarCharVector tableNameVector = (VarCharVector) vectorSchemaRoot.getVector("table_name");
+        VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+        VarBinaryVector schemaVector = (VarBinaryVector) vectorSchemaRoot.getVector("table_schema");
+
+        final int tablesCount = getTablesResp.getTablesCount();
+        final IntStream range = IntStream.range(0, tablesCount);
+
+        range.forEach(i -> {
+          final UserProtos.TableMetadata tables = getTablesResp.getTables(i);
+          catalogNameVector.setSafe(i, new Text(tables.getCatalogName()));
+          schemaNameVector.setSafe(i, new Text(tables.getSchemaName()));
+          tableTypeVector.setSafe(i, new Text(tables.getType()));
+
+          final String tableName = tables.getTableName();
+          tableNameVector.setSafe(i, new Text(tableName));
+
+          final Schema schema = new Schema(tableToFields.get(tableName));
+          schemaVector.setSafe(i, copyFrom(MessageSerializer.serializeMetadata(schema, IpcOption.DEFAULT)).toByteArray());
+        });
+        vectorSchemaRoot.setRowCount(tablesCount);
+        listener.putNext();
+        listener.completed();
+      }
+    } else {
+      try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(
+        FlightSqlProducer.Schemas.GET_TABLES_SCHEMA_NO_SCHEMA, allocator)) {
+        listener.start(vectorSchemaRoot);
+
+        vectorSchemaRoot.allocateNew();
+        VarCharVector catalogNameVector = (VarCharVector) vectorSchemaRoot.getVector("catalog_name");
+        VarCharVector schemaNameVector = (VarCharVector) vectorSchemaRoot.getVector("schema_name");
+        VarCharVector tableNameVector = (VarCharVector) vectorSchemaRoot.getVector("table_name");
+        VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+
+        final int tablesCount = getTablesResp.getTablesCount();
+        final IntStream range = IntStream.range(0, tablesCount);
+
+        range.forEach(i -> {
+          final UserProtos.TableMetadata tables = getTablesResp.getTables(i);
+          catalogNameVector.setSafe(i, new Text(tables.getCatalogName()));
+          schemaNameVector.setSafe(i, new Text(tables.getSchemaName()));
+          tableNameVector.setSafe(i, new Text(tables.getTableName()));
+          tableTypeVector.setSafe(i, new Text(tables.getType()));
+        });
+
+        vectorSchemaRoot.setRowCount(tablesCount);
+        listener.putNext();
+        listener.completed();
+      }
     }
+  }
+
+  /**
+   * Convert Dremio data type to an arrowType.
+   *
+   * @param dataType  dremio data type.
+   * @param precision numeric precision in case the type is numeric.
+   * @param scale     scale in case the type is numeric.
+   * @return          the Arrow type that is equivalent to dremio type.
+   */
+  private static ArrowType getArrowType(final int dataType, final int precision, final int scale) {
+    final ArrowType type =
+      JdbcToArrowUtils.getArrowTypeFromJdbcType(new JdbcFieldInfo(dataType, precision, scale), JdbcToArrowUtils.getUtcCalendar());
+    return isNull(type) ? ArrowType.Utf8.INSTANCE : type;
   }
 
   /**
