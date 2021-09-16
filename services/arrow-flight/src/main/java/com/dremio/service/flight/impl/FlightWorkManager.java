@@ -16,23 +16,38 @@
 
 package com.dremio.service.flight.impl;
 
+import static com.dremio.common.types.Types.getJdbcTypeCode;
+import static com.google.protobuf.ByteString.copyFrom;
+
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.inject.Provider;
 
+import org.apache.arrow.adapter.jdbc.JdbcFieldInfo;
+import org.apache.arrow.adapter.jdbc.JdbcToArrowUtils;
 import org.apache.arrow.flight.CallStatus;
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightProducer;
 import org.apache.arrow.flight.sql.FlightSqlProducer;
 import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.message.IpcOption;
+import org.apache.arrow.vector.ipc.message.MessageSerializer;
+import org.apache.arrow.vector.types.pojo.ArrowType;
+import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
+import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.arrow.vector.util.Text;
 
 import com.dremio.common.utils.protos.ExternalIdHelper;
@@ -223,6 +238,70 @@ public class FlightWorkManager {
     final UserBitShared.ExternalId runExternalId = ExternalIdHelper.generateExternalId();
     final UserProtos.GetTablesReq.Builder builder = UserProtos.GetTablesReq.newBuilder();
 
+    setParameterForGetTablesExecution(commandGetTables, builder);
+
+    final UserRequest userRequest =
+      new UserRequest(UserProtos.RpcType.GET_TABLES, builder.build());
+
+    final CancellableUserResponseHandler<UserProtos.GetTablesResp> responseHandler =
+      new CancellableUserResponseHandler<>(runExternalId, userSession, workerProvider, isRequestCancelled,
+        UserProtos.GetTablesResp.class);
+
+    workerProvider.get().submitWork(runExternalId, userSession, responseHandler, userRequest, TerminationListenerRegistry.NOOP);
+
+    final UserProtos.GetTablesResp getTablesResp = responseHandler.get();
+
+    final boolean includeSchema = commandGetTables.getIncludeSchema();
+    final Map<String, List<Field>> tableToFields = new HashMap<>();
+
+    if (includeSchema) {
+      runGetColumns(isRequestCancelled, userSession, runExternalId, tableToFields);
+    }
+
+    final Schema schema = includeSchema ? FlightSqlProducer.Schemas.GET_TABLES_SCHEMA :
+      FlightSqlProducer.Schemas.GET_TABLES_SCHEMA_NO_SCHEMA;
+
+    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(schema,allocator)) {
+      listener.start(vectorSchemaRoot);
+
+      vectorSchemaRoot.allocateNew();
+      VarCharVector catalogNameVector = (VarCharVector) vectorSchemaRoot.getVector("catalog_name");
+      VarCharVector schemaNameVector = (VarCharVector) vectorSchemaRoot.getVector("schema_name");
+      VarCharVector tableNameVector = (VarCharVector) vectorSchemaRoot.getVector("table_name");
+      VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+      VarBinaryVector schemaVector = (VarBinaryVector) vectorSchemaRoot.getVector("table_schema");
+
+      final int tablesCount = getTablesResp.getTablesCount();
+      final IntStream range = IntStream.range(0, tablesCount);
+
+      range.forEach(i -> {
+        final UserProtos.TableMetadata tables = getTablesResp.getTables(i);
+        catalogNameVector.setSafe(i, new Text(tables.getCatalogName()));
+        schemaNameVector.setSafe(i, new Text(tables.getSchemaName()));
+        tableTypeVector.setSafe(i, new Text(tables.getType()));
+
+        final String tableName = tables.getTableName();
+        tableNameVector.setSafe(i, new Text(tableName));
+
+        if (includeSchema) {
+          final Schema columnSchema = new Schema(tableToFields.get(tableName));
+          schemaVector.setSafe(i, copyFrom(MessageSerializer.serializeMetadata(columnSchema, IpcOption.DEFAULT)).toByteArray());
+        }
+      });
+
+      vectorSchemaRoot.setRowCount(tablesCount);
+      listener.putNext();
+      listener.completed();
+    }
+  }
+
+  /**
+   * Set in the Tables request object the parameter that user passed via CommandGetTables.
+   *
+   * @param commandGetTables The command sent by the user.
+   * @param builder          A builder which holds information that will be used to execute the job.
+   */
+  private void setParameterForGetTablesExecution(FlightSql.CommandGetTables commandGetTables, UserProtos.GetTablesReq.Builder builder) {
     if (commandGetTables.hasSchemaFilterPattern()) {
       builder.setSchemaNameFilter(UserProtos.LikeFilter.newBuilder()
         .setPattern(commandGetTables.getSchemaFilterPattern()).build());
@@ -241,43 +320,62 @@ public class FlightWorkManager {
     if (!commandGetTables.getTableTypesList().isEmpty()) {
       builder.addAllTableTypeFilter(commandGetTables.getTableTypesList());
     }
+  }
 
-    final UserRequest userRequest =
-      new UserRequest(UserProtos.RpcType.GET_TABLES, builder.build());
+  /**
+   * Run the GET_COLUMNS jobs when includeSchema is true.
+   *
+   * @param isRequestCancelled  A supplier to evaluate if the client cancelled the request.
+   * @param userSession         The session for the user which made the request.
+   * @param runExternalId       The id of the query to be run.
+   * @param tableToFields       A map with table and its fields.
+   */
+  private void runGetColumns(Supplier<Boolean> isRequestCancelled, UserSession userSession,
+                         UserBitShared.ExternalId runExternalId, Map<String, List<Field>> tableToFields) {
+    final UserBitShared.ExternalId columnRunExternalId = ExternalIdHelper.generateExternalId();
 
-    final CancellableUserResponseHandler<UserProtos.GetTablesResp> responseHandler =
+    final UserProtos.GetColumnsReq.Builder columnBuilder = UserProtos.GetColumnsReq.newBuilder();
+    final UserRequest columnsRequest = new UserRequest(UserProtos.RpcType.GET_COLUMNS, columnBuilder.build());
+
+    final CancellableUserResponseHandler<UserProtos.GetColumnsResp> columnResponseHandler =
       new CancellableUserResponseHandler<>(runExternalId, userSession, workerProvider, isRequestCancelled,
-        UserProtos.GetTablesResp.class);
+        UserProtos.GetColumnsResp.class);
 
-    workerProvider.get().submitWork(runExternalId, userSession, responseHandler, userRequest, TerminationListenerRegistry.NOOP);
+    workerProvider.get().submitWork(columnRunExternalId, userSession, columnResponseHandler,
+      columnsRequest, TerminationListenerRegistry.NOOP);
 
-    final UserProtos.GetTablesResp getTablesResp = responseHandler.get();
+    final UserProtos.GetColumnsResp getColumnsResp = columnResponseHandler.get();
 
-    try (VectorSchemaRoot vectorSchemaRoot = VectorSchemaRoot.create(FlightSqlProducer.Schemas.GET_TABLES_SCHEMA,
-      allocator)) {
-      listener.start(vectorSchemaRoot);
+    final IntStream columnsRange = IntStream.range(0, getColumnsResp.getColumnsCount());
 
-      vectorSchemaRoot.allocateNew();
-      VarCharVector catalogNameVector = (VarCharVector) vectorSchemaRoot.getVector("catalog_name");
-      VarCharVector schemaNameVector = (VarCharVector) vectorSchemaRoot.getVector("schema_name");
-      VarCharVector tableNameVector = (VarCharVector) vectorSchemaRoot.getVector("table_name");
-      VarCharVector tableTypeVector = (VarCharVector) vectorSchemaRoot.getVector("table_type");
+    columnsRange.forEach(i -> {
+      final UserProtos.ColumnMetadata columns = getColumnsResp.getColumns(i);
 
-      final int tablesCount = getTablesResp.getTablesCount();
-      final IntStream range = IntStream.range(0, tablesCount);
+      final String tableName = columns.getTableName();
+      final List<Field> fields = tableToFields.computeIfAbsent(tableName, tableName_ -> new ArrayList<>());
 
-      range.forEach(i ->{
-        final UserProtos.TableMetadata tables = getTablesResp.getTables(i);
-        catalogNameVector.setSafe(i, new Text(tables.getCatalogName()));
-        schemaNameVector.setSafe(i, new Text(tables.getSchemaName()));
-        tableNameVector.setSafe(i, new Text(tables.getTableName()));
-        tableTypeVector.setSafe(i, new Text(tables.getType()));
-      });
+      final Field field = new Field(
+        columns.getColumnName(),
+        new FieldType(
+          columns.getIsNullable(),
+          getArrowType(getJdbcTypeCode(columns.getDataType()),
+            columns.getNumericPrecision(), columns.getNumericScale()),
+          null),
+        null);
+      fields.add(field);
+    });
+  }
 
-      vectorSchemaRoot.setRowCount(tablesCount);
-      listener.putNext();
-      listener.completed();
-    }
+  /**
+   * Convert Dremio data type to an arrowType.
+   *
+   * @param dataType  dremio data type.
+   * @param precision numeric precision in case the type is numeric.
+   * @param scale     scale in case the type is numeric.
+   * @return          the Arrow type that is equivalent to dremio type.
+   */
+  private static ArrowType getArrowType(final int dataType, final int precision, final int scale) {
+    return JdbcToArrowUtils.getArrowTypeFromJdbcType(new JdbcFieldInfo(dataType, precision, scale), JdbcToArrowUtils.getUtcCalendar());
   }
 
   /**
