@@ -1717,4 +1717,46 @@ public class StringFunctions{
       out.end = outBytea.length;
     }
   }
+
+  /**
+   * Returns the string resulting from concatenating the stringses passed in as parameters in order with a custom separator.
+   */
+  @FunctionTemplate(name = "elt", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class Elt implements SimpleFunction {
+    @Param
+    IntHolder position;
+    @Param
+    VarCharHolder data;
+    @Output
+    VarCharHolder out;
+    @Inject
+    ArrowBuf buffer;
+
+    @Override
+    public void setup() {
+    }
+
+    @Override
+    public void eval() {
+
+      final String words = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(data.start, data.end, data.buffer);
+
+      final String[] wordsList = words.split(",", -1);
+
+      int pos = position.value - 1;
+
+      String result = "";
+
+      if (pos >= 0 ) {
+        result = wordsList[pos];
+      }
+
+      final byte[] outBytea = result.getBytes(com.google.common.base.Charsets.UTF_8);
+      out.buffer = buffer = buffer.reallocIfNeeded(outBytea.length);
+      out.buffer.setBytes(0, outBytea);
+      out.start = 0;
+      out.end = outBytea.length;
+
+    }
+  }
 }
