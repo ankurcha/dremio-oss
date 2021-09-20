@@ -343,4 +343,15 @@ public class TestStringFunctions extends BaseTestFunction {
     });
   }
 
+  @Test
+  public void elt(){
+    testFunctions(new Object[][]{
+      {"elt(c0, c1)", 3, "hi,yeah,wow,good", "wow"},
+      {"elt(c0, c1)", 0, "awesome,candy,data", ""},
+      {"elt(c0, c1)", 1, "", ""},
+      {"elt(c0, c1)", -1, "hello,world,from,&elt", ""},
+    });
+
+  }
+
 }
