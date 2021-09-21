@@ -23,6 +23,8 @@ import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.sql.impl.FlightSql;
+import org.apache.arrow.vector.ipc.message.IpcOption;
+import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.arrow.vector.types.pojo.Schema;
 
 import com.dremio.exec.proto.UserProtos;
@@ -39,6 +41,7 @@ public class FlightPreparedStatement {
 
   private final String query;
   private final CancellableUserResponseHandler<UserProtos.CreatePreparedStatementArrowResp> responseHandler;
+  private static final IpcOption DEFAULT_IPC = new IpcOption();
 
   public FlightPreparedStatement(String query,
                                  CancellableUserResponseHandler<UserProtos.CreatePreparedStatementArrowResp> responseHandler) {
@@ -79,7 +82,7 @@ public class FlightPreparedStatement {
     final Schema schema = buildSchema(createPreparedStatementResp.getPreparedStatement().getArrowSchema());
 
     return ActionCreatePreparedStatementResult.newBuilder()
-        .setDatasetSchema(ByteString.copyFrom(schema.toByteArray()))
+        .setDatasetSchema(ByteString.copyFrom(MessageSerializer.serializeMetadata(schema, DEFAULT_IPC)))
         .setParameterSchema(ByteString.EMPTY)
         .setPreparedStatementHandle(getServerHandle().toByteString())
         .build();
