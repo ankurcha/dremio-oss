@@ -41,7 +41,7 @@ public class FlightPreparedStatement {
 
   private final String query;
   private final CancellableUserResponseHandler<UserProtos.CreatePreparedStatementArrowResp> responseHandler;
-  private final IpcOption DEFAULT_IPC = new IpcOption();
+  private static final IpcOption DEFAULT_IPC = new IpcOption();
 
   public FlightPreparedStatement(String query,
                                  CancellableUserResponseHandler<UserProtos.CreatePreparedStatementArrowResp> responseHandler) {
