@@ -1717,4 +1717,40 @@ public class StringFunctions{
       out.end = outBytea.length;
     }
   }
+
+  /**
+   * Returns the string resulting from concatenating the stringses passed in as parameters in order with a custom separator.
+   */
+  @FunctionTemplate(name = "instr", scope = FunctionScope.SIMPLE, nulls = NullHandling.NULL_IF_NULL)
+  public static class Elt implements SimpleFunction {
+    @Param
+    IntHolder position;
+    @Param
+    VarCharHolder str;
+    @Param
+    VarCharHolder substr;
+    @Output
+    IntHolder out;
+    @Inject
+    ArrowBuf buffer;
+
+    @Override
+    public void setup() {
+    }
+
+    @Override
+    public void eval() {
+
+      int output = 0;
+      final String string = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(str.start, str.end, str.buffer);
+      final String substring = com.dremio.exec.expr.fn.impl.StringFunctionHelpers.toStringFromUTF8(substr.start, substr.end, substr.buffer);
+
+      if (!string.isEmpty() && !substring.isEmpty()) {
+        output = string.indexOf(substring);
+      }
+
+      out.value = output;
+
+    }
+  }
 }
