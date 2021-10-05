@@ -344,7 +344,7 @@ public class TestStringFunctions extends BaseTestFunction {
   }
 
   @Test
-  public void elt(){
+  public void instr(){
     testFunctions(new Object[][]{
       {"instr(c0, c1)", "hello world!", "world", 6},
       {"instr(c0, c1)", "apple, banana, mango", "mango", 15},
