@@ -17,8 +17,10 @@
 package com.dremio.service.flight.impl;
 
 import static com.dremio.common.types.Types.getJdbcTypeCode;
-import static com.google.protobuf.ByteString.copyFrom;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +44,7 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.arrow.vector.ipc.message.IpcOption;
+import org.apache.arrow.vector.ipc.WriteChannel;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
@@ -285,7 +287,14 @@ public class FlightWorkManager {
 
         if (includeSchema) {
           final Schema columnSchema = new Schema(tableToFields.get(tableName));
-          schemaVector.setSafe(i, copyFrom(MessageSerializer.serializeMetadata(columnSchema, IpcOption.DEFAULT)).toByteArray());
+          final ByteArrayOutputStream columnOutputStream = new ByteArrayOutputStream();
+          try {
+            MessageSerializer.serialize(new WriteChannel(Channels.newChannel(columnOutputStream)), columnSchema);
+          } catch (final IOException e) {
+            throw new RuntimeException("Failed to serialize schema", e);
+          }
+
+          schemaVector.setSafe(i, columnOutputStream.toByteArray());
         }
       });
 

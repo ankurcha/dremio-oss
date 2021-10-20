@@ -17,13 +17,18 @@ package com.dremio.service.flight.impl;
 
 import static org.apache.arrow.flight.sql.impl.FlightSql.ActionCreatePreparedStatementResult;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.sql.impl.FlightSql;
-import org.apache.arrow.vector.ipc.message.IpcOption;
+import org.apache.arrow.vector.ipc.WriteChannel;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.arrow.vector.types.pojo.Schema;
 
@@ -41,7 +46,6 @@ public class FlightPreparedStatement {
 
   private final String query;
   private final CancellableUserResponseHandler<UserProtos.CreatePreparedStatementArrowResp> responseHandler;
-  private static final IpcOption DEFAULT_IPC = new IpcOption();
 
   public FlightPreparedStatement(String query,
                                  CancellableUserResponseHandler<UserProtos.CreatePreparedStatementArrowResp> responseHandler) {
@@ -80,9 +84,15 @@ public class FlightPreparedStatement {
   public ActionCreatePreparedStatementResult createAction() {
     final UserProtos.CreatePreparedStatementArrowResp createPreparedStatementResp = responseHandler.get();
     final Schema schema = buildSchema(createPreparedStatementResp.getPreparedStatement().getArrowSchema());
+    final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    try {
+      MessageSerializer.serialize(new WriteChannel(Channels.newChannel(outputStream)), schema);
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to serialize schema", e);
+    }
 
     return ActionCreatePreparedStatementResult.newBuilder()
-        .setDatasetSchema(ByteString.copyFrom(MessageSerializer.serializeMetadata(schema, DEFAULT_IPC)))
+        .setDatasetSchema(ByteString.copyFrom(ByteBuffer.wrap(outputStream.toByteArray())))
         .setParameterSchema(ByteString.EMPTY)
         .setPreparedStatementHandle(getServerHandle().toByteString())
         .build();
