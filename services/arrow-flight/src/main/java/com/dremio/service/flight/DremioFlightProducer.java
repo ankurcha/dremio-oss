@@ -117,10 +117,10 @@ public class DremioFlightProducer implements FlightSqlProducer {
       .maximumSize(1024)
       .expireAfterAccess(30, TimeUnit.MINUTES)
       .build();
-    sqlInfoBuilder = getSqlInfoBuilder();
+    sqlInfoBuilder = getNewSqlInfoBuilder();
   }
 
-  private SqlInfoBuilder getSqlInfoBuilder() {
+  private SqlInfoBuilder getNewSqlInfoBuilder() {
     final String DATABASE_PRODUCT_NAME = "Test Server Name";
     final String DATABASE_PRODUCT_VERSION = "v0.0.1-alpha";
     final String IDENTIFIER_QUOTE_STRING = "\"";
@@ -179,7 +179,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
     final boolean LOCATORS_UPDATE_COPY = true;
     final boolean STORED_FUNCTIONS_USING_CALL_SYNTAX_SUPPORTED = false;
 
-    return sqlInfoBuilder
+    return new SqlInfoBuilder()
       .withFlightSqlServerName(DATABASE_PRODUCT_NAME)
       .withFlightSqlServerVersion(DATABASE_PRODUCT_VERSION)
       .withSqlIdentifierQuoteChar(IDENTIFIER_QUOTE_STRING)
