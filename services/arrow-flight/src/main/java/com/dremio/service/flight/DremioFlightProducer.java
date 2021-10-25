@@ -32,9 +32,25 @@ import static org.apache.arrow.flight.sql.impl.FlightSql.CommandPreparedStatemen
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandPreparedStatementUpdate;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementQuery;
 import static org.apache.arrow.flight.sql.impl.FlightSql.CommandStatementUpdate;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedElementActions.SQL_ELEMENT_IN_INDEX_DEFINITIONS;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedElementActions.SQL_ELEMENT_IN_PROCEDURE_CALLS;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedGroupBy.SQL_GROUP_BY_UNRELATED;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedPositionedCommands.SQL_POSITIONED_DELETE;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedResultSetType.SQL_RESULT_SET_TYPE_FORWARD_ONLY;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedResultSetType.SQL_RESULT_SET_TYPE_SCROLL_INSENSITIVE;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedUnions.SQL_UNION_ALL;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportsConvert.SQL_CONVERT_BIGINT_VALUE;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportsConvert.SQL_CONVERT_BIT_VALUE;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportsConvert.SQL_CONVERT_INTEGER_VALUE;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlTransactionIsolationLevel.SQL_TRANSACTION_READ_COMMITTED;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SqlTransactionIsolationLevel.SQL_TRANSACTION_SERIALIZABLE;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SupportedAnsi92SqlGrammarLevel.ANSI92_ENTRY_SQL;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SupportedAnsi92SqlGrammarLevel.ANSI92_INTERMEDIATE_SQL;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SupportedSqlGrammar.SQL_CORE_GRAMMAR;
+import static org.apache.arrow.flight.sql.impl.FlightSql.SupportedSqlGrammar.SQL_MINIMUM_GRAMMAR;
 import static org.apache.arrow.flight.sql.impl.FlightSql.TicketStatementQuery;
-import static org.apache.arrow.flight.sql.util.SqlInfoOptionsUtils.createBitmaskFromEnums;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
@@ -57,16 +73,8 @@ import org.apache.arrow.flight.SchemaResult;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.sql.FlightSqlProducer;
 import org.apache.arrow.flight.sql.FlightSqlUtils;
-import org.apache.arrow.flight.sql.SqlInfoProvider;
-import org.apache.arrow.flight.sql.impl.FlightSql.SqlInfo;
-import org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedElementActions;
-import org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedGroupBy;
-import org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedPositionedCommands;
-import org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedResultSetType;
-import org.apache.arrow.flight.sql.impl.FlightSql.SqlSupportedUnions;
-import org.apache.arrow.flight.sql.impl.FlightSql.SqlTransactionIsolationLevel;
-import org.apache.arrow.flight.sql.impl.FlightSql.SupportedAnsi92SqlGrammarLevel;
-import org.apache.arrow.flight.sql.impl.FlightSql.SupportedSqlGrammar;
+import org.apache.arrow.flight.sql.SqlInfoBuilder;
+import org.apache.arrow.flight.sql.impl.FlightSql;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.types.pojo.Schema;
 
@@ -89,7 +97,7 @@ import com.google.protobuf.Message;
  */
 public class DremioFlightProducer implements FlightSqlProducer {
 
-  private static final SqlInfoProvider sqlInfoProvider = new SqlInfoProvider();
+  private final SqlInfoBuilder sqlInfoBuilder;
   private final FlightWorkManager flightWorkManager;
   private final Location location;
   private final DremioFlightSessionsManager sessionsManager;
@@ -109,164 +117,137 @@ public class DremioFlightProducer implements FlightSqlProducer {
       .maximumSize(1024)
       .expireAfterAccess(30, TimeUnit.MINUTES)
       .build();
-    setUoSqlInfoProvider();
+    sqlInfoBuilder = getSqlInfoBuilder();
   }
 
-  private void setUoSqlInfoProvider() {
-    // TODO Rebase branch to get SqlInfo.SQL_SUPPORTS_CONVERT and SqlSupportsConvert
-//    sqlInfoProvider.setIntToIntListMapProvider(SqlInfo.forNumber(517), ImmutableMap.builder()
-//      .put(
-//        SqlSupportsConvert.SQL_CONVERT_BIT_VALUE,
-//        Arrays.asList(
-//          SqlSupportsConvert.SQL_CONVERT_INTEGER_VALUE,
-//          SqlSupportsConvert.SQL_CONVERT_BIGINT_VALUE))
-//      .build());
-    final String MOCK_DATABASE_PRODUCT_NAME = "Test Server Name";
-    final String MOCK_DATABASE_PRODUCT_VERSION = "v0.0.1-alpha";
-    final String MOCK_IDENTIFIER_QUOTE_STRING = "\"";
-    final boolean MOCK_IS_READ_ONLY = true;
-    final String MOCK_SQL_KEYWORDS = "ADD, ADD CONSTRAINT, ALTER, ALTER TABLE, ANY, USER, TABLE";
-    final String MOCK_NUMERIC_FUNCTIONS = "ABS(), ACOS(), ASIN(), ATAN(), CEIL(), CEILING(), COT()";
-    final String MOCK_STRING_FUNCTIONS = "ASCII, CHAR, CHARINDEX, CONCAT, CONCAT_WS, FORMAT, LEFT";
-    final String MOCK_SYSTEM_FUNCTIONS = "CAST, CONVERT, CHOOSE, ISNULL, IS_NUMERIC, IIF, TRY_CAST";
-    final String MOCK_TIME_DATE_FUNCTIONS = "GETDATE(), DATEPART(), DATEADD(), DATEDIFF()";
-    final String MOCK_SEARCH_STRING_ESCAPE = "\\";
-    final String MOCK_EXTRA_NAME_CHARACTERS = "";
-    final boolean MOCK_SUPPORTS_COLUMN_ALIASING = true;
-    final boolean MOCK_NULL_PLUS_NULL_IS_NULL = true;
-    final boolean MOCK_SUPPORTS_TABLE_CORRELATION_NAMES = true;
-    final boolean MOCK_SUPPORTS_DIFFERENT_TABLE_CORRELATION_NAMES = false;
-    final boolean MOCK_EXPRESSIONS_IN_ORDER_BY = true;
-    final boolean MOCK_SUPPORTS_ORDER_BY_UNRELATED = true;
-    final boolean MOCK_SUPPORTS_LIKE_ESCAPE_CLAUSE = true;
-    final boolean MOCK_NON_NULLABLE_COLUMNS = true;
-    final String MOCK_SCHEMA_TERM = "schema";
-    final String MOCK_PROCEDURE_TERM = "procedure";
-    final String MOCK_CATALOG_TERM = "catalog";
-    final boolean MOCK_SUPPORTS_INTEGRITY_ENHANCEMENT_FACILITY = true;
-    final boolean MOCK_CATALOG_AT_START = false;
-    final boolean MOCK_SELECT_FOR_UPDATE_SUPPORTED = false;
-    final boolean MOCK_STORED_PROCEDURES_SUPPORTED = false;
-    final int MOCK_SUPPORTED_SUBQUERIES = 1;
-    final boolean MOCK_CORRELATED_SUBQUERIES_SUPPORTED = true;
-    final int MOCK_MAX_BINARY_LITERAL_LENGTH = 0;
-    final int MOCK_MAX_CHAR_LITERAL_LENGTH = 0;
-    final int MOCK_MAX_COLUMN_NAME_LENGTH = 1024;
-    final int MOCK_MAX_COLUMNS_IN_GROUP_BY = 0;
-    final int MOCK_MAX_COLUMNS_IN_INDEX = 0;
-    final int MOCK_MAX_COLUMNS_IN_ORDER_BY = 0;
-    final int MOCK_MAX_COLUMNS_IN_SELECT = 0;
-    final int MOCK_MAX_CONNECTIONS = 0;
-    final int MOCK_MAX_CURSOR_NAME_LENGTH = 1024;
-    final int MOCK_MAX_INDEX_LENGTH = 0;
-    final int MOCK_SCHEMA_NAME_LENGTH = 1024;
-    final int MOCK_MAX_PROCEDURE_NAME_LENGTH = 0;
-    final int MOCK_MAX_CATALOG_NAME_LENGTH = 1024;
-    final int MOCK_MAX_ROW_SIZE = 0;
-    final boolean MOCK_MAX_ROW_SIZE_INCLUDES_BLOBS = false;
-    final int MOCK_MAX_STATEMENT_LENGTH = 0;
-    final int MOCK_MAX_STATEMENTS = 0;
-    final int MOCK_MAX_TABLE_NAME_LENGTH = 1024;
-    final int MOCK_MAX_TABLES_IN_SELECT = 0;
-    final int MOCK_MAX_USERNAME_LENGTH = 1024;
-    final int MOCK_DEFAULT_TRANSACTION_ISOLATION = 0;
-    final boolean MOCK_TRANSACTIONS_SUPPORTED = false;
-    final boolean MOCK_DATA_DEFINITION_CAUSES_TRANSACTION_COMMIT = true;
-    final boolean MOCK_DATA_DEFINITIONS_IN_TRANSACTIONS_IGNORED = false;
-    final boolean MOCK_BATCH_UPDATES_SUPPORTED = true;
-    final boolean MOCK_SAVEPOINTS_SUPPORTED = false;
-    final boolean MOCK_NAMED_PARAMETERS_SUPPORTED = false;
-    final boolean MOCK_LOCATORS_UPDATE_COPY = true;
-    final boolean MOCK_STORED_FUNCTIONS_USING_CALL_SYNTAX_SUPPORTED = false;
+  private SqlInfoBuilder getSqlInfoBuilder() {
+    final String DATABASE_PRODUCT_NAME = "Test Server Name";
+    final String DATABASE_PRODUCT_VERSION = "v0.0.1-alpha";
+    final String IDENTIFIER_QUOTE_STRING = "\"";
+    final boolean IS_READ_ONLY = true;
+    final String SQL_KEYWORDS = "ADD, ADD CONSTRAINT, ALTER, ALTER TABLE, ANY, USER, TABLE";
+    final String NUMERIC_FUNCTIONS = "ABS(), ACOS(), ASIN(), ATAN(), CEIL(), CEILING(), COT()";
+    final String STRING_FUNCTIONS = "ASCII, CHAR, CHARINDEX, CONCAT, CONCAT_WS, FORMAT, LEFT";
+    final String SYSTEM_FUNCTIONS = "CAST, CONVERT, CHOOSE, ISNULL, IS_NUMERIC, IIF, TRY_CAST";
+    final String TIME_DATE_FUNCTIONS = "GETDATE(), DATEPART(), DATEADD(), DATEDIFF()";
+    final String SEARCH_STRING_ESCAPE = "\\";
+    final String EXTRA_NAME_CHARACTERS = "";
+    final boolean SUPPORTS_COLUMN_ALIASING = true;
+    final boolean NULL_PLUS_NULL_IS_NULL = true;
+    final boolean SUPPORTS_TABLE_CORRELATION_NAMES = true;
+    final boolean SUPPORTS_DIFFERENT_TABLE_CORRELATION_NAMES = false;
+    final boolean EXPRESSIONS_IN_ORDER_BY = true;
+    final boolean SUPPORTS_ORDER_BY_UNRELATED = true;
+    final boolean SUPPORTS_LIKE_ESCAPE_CLAUSE = true;
+    final boolean NON_NULLABLE_COLUMNS = true;
+    final String SCHEMA_TERM = "schema";
+    final String PROCEDURE_TERM = "procedure";
+    final String CATALOG_TERM = "catalog";
+    final boolean SUPPORTS_INTEGRITY_ENHANCEMENT_FACILITY = true;
+    final boolean CATALOG_AT_START = false;
+    final boolean SELECT_FOR_UPDATE_SUPPORTED = false;
+    final boolean STORED_PROCEDURES_SUPPORTED = false;
+    final int SUPPORTED_SUBQUERIES = 1;
+    final boolean CORRELATED_SUBQUERIES_SUPPORTED = true;
+    final int MAX_BINARY_LITERAL_LENGTH = 0;
+    final int MAX_CHAR_LITERAL_LENGTH = 0;
+    final int MAX_COLUMN_NAME_LENGTH = 1024;
+    final int MAX_COLUMNS_IN_GROUP_BY = 0;
+    final int MAX_COLUMNS_IN_INDEX = 0;
+    final int MAX_COLUMNS_IN_ORDER_BY = 0;
+    final int MAX_COLUMNS_IN_SELECT = 0;
+    final int MAX_CONNECTIONS = 0;
+    final int MAX_CURSOR_NAME_LENGTH = 1024;
+    final int MAX_INDEX_LENGTH = 0;
+    final int SCHEMA_NAME_LENGTH = 1024;
+    final int MAX_PROCEDURE_NAME_LENGTH = 0;
+    final int MAX_CATALOG_NAME_LENGTH = 1024;
+    final int MAX_ROW_SIZE = 0;
+    final boolean MAX_ROW_SIZE_INCLUDES_BLOBS = false;
+    final int MAX_STATEMENT_LENGTH = 0;
+    final int MAX_STATEMENTS = 0;
+    final int MAX_TABLE_NAME_LENGTH = 1024;
+    final int MAX_TABLES_IN_SELECT = 0;
+    final int MAX_USERNAME_LENGTH = 1024;
+    final int DEFAULT_TRANSACTION_ISOLATION = 0;
+    final boolean TRANSACTIONS_SUPPORTED = false;
+    final boolean DATA_DEFINITION_CAUSES_TRANSACTION_COMMIT = true;
+    final boolean DATA_DEFINITIONS_IN_TRANSACTIONS_IGNORED = false;
+    final boolean BATCH_UPDATES_SUPPORTED = true;
+    final boolean SAVEPOINTS_SUPPORTED = false;
+    final boolean NAMED_PARAMETERS_SUPPORTED = false;
+    final boolean LOCATORS_UPDATE_COPY = true;
+    final boolean STORED_FUNCTIONS_USING_CALL_SYNTAX_SUPPORTED = false;
 
-    sqlInfoProvider.setStringProvider(SqlInfo.FLIGHT_SQL_SERVER_NAME, MOCK_DATABASE_PRODUCT_NAME);
-    sqlInfoProvider.setStringProvider(SqlInfo.FLIGHT_SQL_SERVER_VERSION, MOCK_DATABASE_PRODUCT_VERSION);
-    sqlInfoProvider.setStringProvider(SqlInfo.SQL_IDENTIFIER_QUOTE_CHAR, MOCK_IDENTIFIER_QUOTE_STRING);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.FLIGHT_SQL_SERVER_READ_ONLY, MOCK_IS_READ_ONLY);
-    sqlInfoProvider.setStringListProvider(SqlInfo.SQL_KEYWORDS, MOCK_SQL_KEYWORDS.split("\\s*,\\s*"));
-    sqlInfoProvider.setStringListProvider(SqlInfo.SQL_NUMERIC_FUNCTIONS, MOCK_NUMERIC_FUNCTIONS.split("\\s*,\\s*"));
-    sqlInfoProvider.setStringListProvider(SqlInfo.SQL_STRING_FUNCTIONS, MOCK_STRING_FUNCTIONS.split("\\s*,\\s*"));
-    sqlInfoProvider.setStringListProvider(SqlInfo.SQL_SYSTEM_FUNCTIONS, MOCK_SYSTEM_FUNCTIONS.split("\\s*,\\s*"));
-    sqlInfoProvider.setStringListProvider(SqlInfo.SQL_DATETIME_FUNCTIONS,
-      MOCK_TIME_DATE_FUNCTIONS.split("\\s*,\\s*"));
-    sqlInfoProvider.setStringProvider(SqlInfo.SQL_SEARCH_STRING_ESCAPE, MOCK_SEARCH_STRING_ESCAPE);
-    sqlInfoProvider.setStringProvider(SqlInfo.SQL_EXTRA_NAME_CHARACTERS, MOCK_EXTRA_NAME_CHARACTERS);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SUPPORTS_COLUMN_ALIASING, MOCK_SUPPORTS_COLUMN_ALIASING);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_NULL_PLUS_NULL_IS_NULL, MOCK_NULL_PLUS_NULL_IS_NULL);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SUPPORTS_TABLE_CORRELATION_NAMES,
-      MOCK_SUPPORTS_TABLE_CORRELATION_NAMES);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SUPPORTS_DIFFERENT_TABLE_CORRELATION_NAMES,
-      MOCK_SUPPORTS_DIFFERENT_TABLE_CORRELATION_NAMES);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SUPPORTS_EXPRESSIONS_IN_ORDER_BY, MOCK_EXPRESSIONS_IN_ORDER_BY);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SUPPORTS_ORDER_BY_UNRELATED, MOCK_SUPPORTS_ORDER_BY_UNRELATED);
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_SUPPORTED_GROUP_BY,
-      (int) createBitmaskFromEnums(SqlSupportedGroupBy.SQL_GROUP_BY_UNRELATED));
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SUPPORTS_LIKE_ESCAPE_CLAUSE, MOCK_SUPPORTS_LIKE_ESCAPE_CLAUSE);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SUPPORTS_NON_NULLABLE_COLUMNS, MOCK_NON_NULLABLE_COLUMNS);
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_SUPPORTED_GRAMMAR,
-      (int) (createBitmaskFromEnums(SupportedSqlGrammar.SQL_CORE_GRAMMAR, SupportedSqlGrammar.SQL_MINIMUM_GRAMMAR)));
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_ANSI92_SUPPORTED_LEVEL,
-      (int) (createBitmaskFromEnums(SupportedAnsi92SqlGrammarLevel.ANSI92_ENTRY_SQL,
-        SupportedAnsi92SqlGrammarLevel.ANSI92_INTERMEDIATE_SQL)));
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SUPPORTS_INTEGRITY_ENHANCEMENT_FACILITY,
-      MOCK_SUPPORTS_INTEGRITY_ENHANCEMENT_FACILITY);
-    sqlInfoProvider.setStringProvider(SqlInfo.SQL_SCHEMA_TERM, MOCK_SCHEMA_TERM);
-    sqlInfoProvider.setStringProvider(SqlInfo.SQL_CATALOG_TERM, MOCK_CATALOG_TERM);
-    sqlInfoProvider.setStringProvider(SqlInfo.SQL_PROCEDURE_TERM, MOCK_PROCEDURE_TERM);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_CATALOG_AT_START, MOCK_CATALOG_AT_START);
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_SCHEMAS_SUPPORTED_ACTIONS,
-      (int) (createBitmaskFromEnums(SqlSupportedElementActions.SQL_ELEMENT_IN_PROCEDURE_CALLS,
-        SqlSupportedElementActions.SQL_ELEMENT_IN_INDEX_DEFINITIONS)));
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_CATALOGS_SUPPORTED_ACTIONS,
-      (int) createBitmaskFromEnums(SqlSupportedElementActions.SQL_ELEMENT_IN_INDEX_DEFINITIONS));
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_SUPPORTED_POSITIONED_COMMANDS,
-      (int) createBitmaskFromEnums(SqlSupportedPositionedCommands.SQL_POSITIONED_DELETE));
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SELECT_FOR_UPDATE_SUPPORTED, MOCK_SELECT_FOR_UPDATE_SUPPORTED);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_STORED_PROCEDURES_SUPPORTED, MOCK_STORED_PROCEDURES_SUPPORTED);
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_CORRELATED_SUBQUERIES_SUPPORTED, MOCK_SUPPORTED_SUBQUERIES);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_CORRELATED_SUBQUERIES_SUPPORTED,
-      MOCK_CORRELATED_SUBQUERIES_SUPPORTED);
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_SUPPORTED_UNIONS,
-      (int) createBitmaskFromEnums(SqlSupportedUnions.SQL_UNION_ALL));
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_BINARY_LITERAL_LENGTH, MOCK_MAX_BINARY_LITERAL_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_CHAR_LITERAL_LENGTH, MOCK_MAX_CHAR_LITERAL_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_COLUMN_NAME_LENGTH, MOCK_MAX_COLUMN_NAME_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_COLUMNS_IN_GROUP_BY, MOCK_MAX_COLUMNS_IN_GROUP_BY);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_COLUMNS_IN_INDEX, MOCK_MAX_COLUMNS_IN_INDEX);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_COLUMNS_IN_ORDER_BY, MOCK_MAX_COLUMNS_IN_ORDER_BY);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_COLUMNS_IN_SELECT, MOCK_MAX_COLUMNS_IN_SELECT);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_CONNECTIONS, MOCK_MAX_CONNECTIONS);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_CURSOR_NAME_LENGTH, MOCK_MAX_CURSOR_NAME_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_INDEX_LENGTH, MOCK_MAX_INDEX_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_SCHEMA_NAME_LENGTH, MOCK_SCHEMA_NAME_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_PROCEDURE_NAME_LENGTH, MOCK_MAX_PROCEDURE_NAME_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_CATALOG_NAME_LENGTH, MOCK_MAX_CATALOG_NAME_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_ROW_SIZE, MOCK_MAX_ROW_SIZE);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_MAX_ROW_SIZE_INCLUDES_BLOBS, MOCK_MAX_ROW_SIZE_INCLUDES_BLOBS);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_STATEMENT_LENGTH, MOCK_MAX_STATEMENT_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_STATEMENTS, MOCK_MAX_STATEMENTS);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_TABLE_NAME_LENGTH, MOCK_MAX_TABLE_NAME_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_TABLES_IN_SELECT, MOCK_MAX_TABLES_IN_SELECT);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_MAX_USERNAME_LENGTH, MOCK_MAX_USERNAME_LENGTH);
-    sqlInfoProvider.setBitIntProvider(SqlInfo.SQL_DEFAULT_TRANSACTION_ISOLATION,
-      MOCK_DEFAULT_TRANSACTION_ISOLATION);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_TRANSACTIONS_SUPPORTED, MOCK_TRANSACTIONS_SUPPORTED);
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_SUPPORTED_TRANSACTIONS_ISOLATION_LEVELS,
-      (int) (createBitmaskFromEnums(SqlTransactionIsolationLevel.SQL_TRANSACTION_SERIALIZABLE,
-        SqlTransactionIsolationLevel.SQL_TRANSACTION_READ_COMMITTED)));
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_DATA_DEFINITION_CAUSES_TRANSACTION_COMMIT,
-      MOCK_DATA_DEFINITION_CAUSES_TRANSACTION_COMMIT);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_DATA_DEFINITIONS_IN_TRANSACTIONS_IGNORED,
-      MOCK_DATA_DEFINITIONS_IN_TRANSACTIONS_IGNORED);
-    sqlInfoProvider.setIntProvider(SqlInfo.SQL_SUPPORTED_RESULT_SET_TYPES,
-      (int) (createBitmaskFromEnums(SqlSupportedResultSetType.SQL_RESULT_SET_TYPE_FORWARD_ONLY,
-        SqlSupportedResultSetType.SQL_RESULT_SET_TYPE_SCROLL_INSENSITIVE)));
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_BATCH_UPDATES_SUPPORTED, MOCK_BATCH_UPDATES_SUPPORTED);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_SAVEPOINTS_SUPPORTED, MOCK_SAVEPOINTS_SUPPORTED);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_NAMED_PARAMETERS_SUPPORTED, MOCK_NAMED_PARAMETERS_SUPPORTED);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_LOCATORS_UPDATE_COPY, MOCK_LOCATORS_UPDATE_COPY);
-    sqlInfoProvider.setBooleanProvider(SqlInfo.SQL_STORED_FUNCTIONS_USING_CALL_SYNTAX_SUPPORTED,
-      MOCK_STORED_FUNCTIONS_USING_CALL_SYNTAX_SUPPORTED);
+    return sqlInfoBuilder
+      .withFlightSqlServerName(DATABASE_PRODUCT_NAME)
+      .withFlightSqlServerVersion(DATABASE_PRODUCT_VERSION)
+      .withSqlIdentifierQuoteChar(IDENTIFIER_QUOTE_STRING)
+      .withFlightSqlServerReadOnly(IS_READ_ONLY)
+      .withSqlKeywords(SQL_KEYWORDS.split("\\s*,\\s*"))
+      .withSqlNumericFunctions(NUMERIC_FUNCTIONS.split("\\s*,\\s*"))
+      .withSqlStringFunctions(STRING_FUNCTIONS.split("\\s*,\\s*"))
+      .withSqlSystemFunctions(SYSTEM_FUNCTIONS.split("\\s*,\\s*"))
+      .withSqlDatetimeFunctions(TIME_DATE_FUNCTIONS.split("\\s*,\\s*"))
+      .withSqlSearchStringEscape(SEARCH_STRING_ESCAPE)
+      .withSqlExtraNameCharacters(EXTRA_NAME_CHARACTERS)
+      .withSqlSupportsColumnAliasing(SUPPORTS_COLUMN_ALIASING)
+      .withSqlNullPlusNullIsNull(NULL_PLUS_NULL_IS_NULL)
+      .withSqlSupportsTableCorrelationNames(SUPPORTS_TABLE_CORRELATION_NAMES)
+      .withSqlSupportsDifferentTableCorrelationNames(SUPPORTS_DIFFERENT_TABLE_CORRELATION_NAMES)
+      .withSqlSupportsExpressionsInOrderBy(EXPRESSIONS_IN_ORDER_BY)
+      .withSqlSupportsOrderByUnrelated(SUPPORTS_ORDER_BY_UNRELATED)
+      .withSqlSupportedGroupBy(SQL_GROUP_BY_UNRELATED)
+      .withSqlSupportsLikeEscapeClause(SUPPORTS_LIKE_ESCAPE_CLAUSE)
+      .withSqlSupportsNonNullableColumns(NON_NULLABLE_COLUMNS)
+      .withSqlSupportedGrammar(SQL_CORE_GRAMMAR, SQL_MINIMUM_GRAMMAR)
+      .withSqlAnsi92SupportedLevel(ANSI92_ENTRY_SQL, ANSI92_INTERMEDIATE_SQL)
+      .withSqlSupportsIntegrityEnhancementFacility(SUPPORTS_INTEGRITY_ENHANCEMENT_FACILITY)
+      .withSqlSchemaTerm(SCHEMA_TERM)
+      .withSqlCatalogTerm(CATALOG_TERM)
+      .withSqlProcedureTerm(PROCEDURE_TERM)
+      .withSqlCatalogAtStart(CATALOG_AT_START)
+      .withSqlSchemasSupportedActions(SQL_ELEMENT_IN_PROCEDURE_CALLS, SQL_ELEMENT_IN_INDEX_DEFINITIONS)
+      .withSqlCatalogsSupportedActions(SQL_ELEMENT_IN_INDEX_DEFINITIONS)
+      .withSqlSupportedPositionedCommands(SQL_POSITIONED_DELETE)
+      .withSqlSelectForUpdateSupported(SELECT_FOR_UPDATE_SUPPORTED)
+      .withSqlStoredProceduresSupported(STORED_PROCEDURES_SUPPORTED)
+      .withSqlSubQueriesSupported(SUPPORTED_SUBQUERIES)
+      .withSqlCorrelatedSubqueriesSupported(CORRELATED_SUBQUERIES_SUPPORTED)
+      .withSqlSupportedUnions(SQL_UNION_ALL)
+      .withSqlMaxBinaryLiteralLength(MAX_BINARY_LITERAL_LENGTH)
+      .withSqlMaxCharLiteralLength(MAX_CHAR_LITERAL_LENGTH)
+      .withSqlMaxColumnNameLength(MAX_COLUMN_NAME_LENGTH)
+      .withSqlMaxColumnsInGroupBy(MAX_COLUMNS_IN_GROUP_BY)
+      .withSqlMaxColumnsInIndex(MAX_COLUMNS_IN_INDEX)
+      .withSqlMaxColumnsInOrderBy(MAX_COLUMNS_IN_ORDER_BY)
+      .withSqlMaxColumnsInSelect(MAX_COLUMNS_IN_SELECT)
+      .withSqlMaxConnections(MAX_CONNECTIONS)
+      .withSqlMaxCursorNameLength(MAX_CURSOR_NAME_LENGTH)
+      .withSqlMaxIndexLength(MAX_INDEX_LENGTH)
+      .withSqlSchemaNameLength(SCHEMA_NAME_LENGTH)
+      .withSqlMaxProcedureNameLength(MAX_PROCEDURE_NAME_LENGTH)
+      .withSqlMaxCatalogNameLength(MAX_CATALOG_NAME_LENGTH)
+      .withSqlMaxRowSize(MAX_ROW_SIZE)
+      .withSqlMaxRowSizeIncludesBlobs(MAX_ROW_SIZE_INCLUDES_BLOBS)
+      .withSqlMaxStatementLength(MAX_STATEMENT_LENGTH)
+      .withSqlMaxStatements(MAX_STATEMENTS)
+      .withSqlMaxTableNameLength(MAX_TABLE_NAME_LENGTH)
+      .withSqlMaxTablesInSelect(MAX_TABLES_IN_SELECT)
+      .withSqlMaxUsernameLength(MAX_USERNAME_LENGTH)
+      .withSqlDefaultTransactionIsolation(DEFAULT_TRANSACTION_ISOLATION)
+      .withSqlTransactionsSupported(TRANSACTIONS_SUPPORTED)
+      .withSqlSupportedTransactionsIsolationLevels(SQL_TRANSACTION_SERIALIZABLE, SQL_TRANSACTION_READ_COMMITTED)
+      .withSqlDataDefinitionCausesTransactionCommit(DATA_DEFINITION_CAUSES_TRANSACTION_COMMIT)
+      .withSqlDataDefinitionsInTransactionsIgnored(DATA_DEFINITIONS_IN_TRANSACTIONS_IGNORED)
+      .withSqlSupportedResultSetTypes(SQL_RESULT_SET_TYPE_FORWARD_ONLY, SQL_RESULT_SET_TYPE_SCROLL_INSENSITIVE)
+      .withSqlBatchUpdatesSupported(BATCH_UPDATES_SUPPORTED)
+      .withSqlSavepointsSupported(SAVEPOINTS_SUPPORTED)
+      .withSqlNamedParametersSupported(NAMED_PARAMETERS_SUPPORTED)
+      .withSqlLocatorsUpdateCopy(LOCATORS_UPDATE_COPY)
+      .withSqlStoredFunctionsUsingCallSyntaxSupported(STORED_FUNCTIONS_USING_CALL_SYNTAX_SUPPORTED)
+      .withSqlSupportsConvert(Collections.singletonMap(
+        SQL_CONVERT_BIT_VALUE, Arrays.asList(SQL_CONVERT_INTEGER_VALUE, SQL_CONVERT_BIGINT_VALUE)));
   }
 
   @Override
@@ -508,7 +489,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public void getStreamSqlInfo(CommandGetSqlInfo commandGetSqlInfo,
                                CallContext callContext,
                                ServerStreamListener serverStreamListener) {
-    sqlInfoProvider.send(commandGetSqlInfo.getInfoList(), serverStreamListener);
+    sqlInfoBuilder.send(commandGetSqlInfo.getInfoList(), serverStreamListener);
   }
 
   @Override
@@ -608,7 +589,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoExportedKeys(
     CommandGetExportedKeys commandGetExportedKeys,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    final Schema schema = Schemas.GET_IMPORTED_AND_EXPORTED_KEYS_SCHEMA;
+    final Schema schema = Schemas.GET_EXPORTED_KEYS_SCHEMA;
     return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
   }
 
@@ -624,7 +605,15 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoImportedKeys(
     CommandGetImportedKeys commandGetImportedKeys,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    final Schema schema = Schemas.GET_IMPORTED_AND_EXPORTED_KEYS_SCHEMA;
+    final Schema schema = Schemas.GET_IMPORTED_KEYS_SCHEMA;
+    return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
+  }
+
+  @Override
+  public FlightInfo getFlightInfoCrossReference(
+    FlightSql.CommandGetCrossReference commandGetCrossReference,
+    CallContext callContext, FlightDescriptor flightDescriptor) {
+    final Schema schema = Schemas.GET_CROSS_REFERENCE_SCHEMA;
     return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
   }
 
@@ -634,6 +623,13 @@ public class DremioFlightProducer implements FlightSqlProducer {
     CallContext callContext,
     ServerStreamListener serverStreamListener) {
     throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetImportedKeys not supported.").toRuntimeException();
+  }
+
+  @Override
+  public void getStreamCrossReference(
+    FlightSql.CommandGetCrossReference commandGetCrossReference,
+    CallContext callContext, ServerStreamListener serverStreamListener) {
+    throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetCrossReference not supported.").toRuntimeException();
   }
 
   @Override
