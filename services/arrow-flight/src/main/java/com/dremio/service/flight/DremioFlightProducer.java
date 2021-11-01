@@ -56,6 +56,7 @@ import org.apache.arrow.flight.SchemaResult;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.sql.FlightSqlProducer;
 import org.apache.arrow.flight.sql.FlightSqlUtils;
+import org.apache.arrow.flight.sql.impl.FlightSql.CommandGetCrossReference;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.types.pojo.Schema;
 
@@ -129,7 +130,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
   @Override
   public void getStreamPreparedStatement(CommandPreparedStatementQuery commandPreparedStatementQuery,
-                                         CallContext callContext, Ticket ticket,
+                                         CallContext callContext,
                                          ServerStreamListener serverStreamListener) {
     UserProtos.PreparedStatementHandle preparedStatementHandle;
     try {
@@ -286,7 +287,6 @@ public class DremioFlightProducer implements FlightSqlProducer {
   @Override
   public void getStreamStatement(TicketStatementQuery ticketStatementQuery,
                                  CallContext callContext,
-                                 Ticket ticket,
                                  ServerStreamListener serverStreamListener) {
     try {
       final UserProtos.PreparedStatementHandle preparedStatementHandle =
@@ -333,7 +333,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
   @Override
   public void getStreamSqlInfo(CommandGetSqlInfo commandGetSqlInfo,
-                               CallContext callContext, Ticket ticket,
+                               CallContext callContext,
                                ServerStreamListener serverStreamListener) {
     throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetSqlInfo not supported.").toRuntimeException();
   }
@@ -347,7 +347,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   }
 
   @Override
-  public void getStreamCatalogs(CallContext callContext, Ticket ticket,
+  public void getStreamCatalogs(CallContext callContext,
                                 ServerStreamListener serverStreamListener) {
     final UserSession session = getUserSessionFromCallContext(callContext);
 
@@ -364,7 +364,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
   @Override
   public void getStreamSchemas(CommandGetSchemas commandGetSchemas,
-                               CallContext callContext, Ticket ticket,
+                               CallContext callContext,
                                ServerStreamListener serverStreamListener) {
     final UserSession session = getUserSessionFromCallContext(callContext);
 
@@ -392,7 +392,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
   @Override
   public void getStreamTables(CommandGetTables commandGetTables,
-                              CallContext callContext, Ticket ticket,
+                              CallContext callContext,
                               ServerStreamListener serverStreamListener) {
     final UserSession session = getUserSessionFromCallContext(callContext);
 
@@ -410,7 +410,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
   }
 
   @Override
-  public void getStreamTableTypes(CallContext callContext, Ticket ticket,
+  public void getStreamTableTypes(CallContext callContext,
                                   ServerStreamListener serverStreamListener) {
     flightWorkManager.runGetTablesTypes(serverStreamListener,
       allocator);
@@ -426,7 +426,7 @@ public class DremioFlightProducer implements FlightSqlProducer {
 
   @Override
   public void getStreamPrimaryKeys(CommandGetPrimaryKeys commandGetPrimaryKeys,
-                                   CallContext callContext, Ticket ticket,
+                                   CallContext callContext,
                                    ServerStreamListener serverStreamListener) {
     throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetPrimaryKeys not supported.").toRuntimeException();
   }
@@ -435,14 +435,14 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoExportedKeys(
     CommandGetExportedKeys commandGetExportedKeys,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    final Schema schema = Schemas.GET_IMPORTED_AND_EXPORTED_KEYS_SCHEMA;
+    final Schema schema = Schemas.GET_EXPORTED_KEYS_SCHEMA;
     return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
   }
 
   @Override
   public void getStreamExportedKeys(
     CommandGetExportedKeys commandGetExportedKeys,
-    CallContext callContext, Ticket ticket,
+    CallContext callContext,
     ServerStreamListener serverStreamListener) {
     throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetExportedKeys not supported.").toRuntimeException();
   }
@@ -451,16 +451,31 @@ public class DremioFlightProducer implements FlightSqlProducer {
   public FlightInfo getFlightInfoImportedKeys(
     CommandGetImportedKeys commandGetImportedKeys,
     CallContext callContext, FlightDescriptor flightDescriptor) {
-    final Schema schema = Schemas.GET_IMPORTED_AND_EXPORTED_KEYS_SCHEMA;
+    final Schema schema = Schemas.GET_IMPORTED_KEYS_SCHEMA;
+    return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
+  }
+
+  @Override
+  public FlightInfo getFlightInfoCrossReference(
+    CommandGetCrossReference commandGetCrossReference,
+    CallContext callContext, FlightDescriptor flightDescriptor) {
+    final Schema schema = Schemas.GET_CROSS_REFERENCE_SCHEMA;
     return new FlightInfo(schema, flightDescriptor, Collections.emptyList(), -1, -1);
   }
 
   @Override
   public void getStreamImportedKeys(
     CommandGetImportedKeys commandGetImportedKeys,
-    CallContext callContext, Ticket ticket,
+    CallContext callContext,
     ServerStreamListener serverStreamListener) {
     throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetImportedKeys not supported.").toRuntimeException();
+  }
+
+  @Override
+  public void getStreamCrossReference(
+    CommandGetCrossReference commandGetCrossReference,
+    CallContext callContext, ServerStreamListener serverStreamListener) {
+    throw CallStatus.UNIMPLEMENTED.withDescription("CommandGetCrossReference not supported.").toRuntimeException();
   }
 
   @Override
