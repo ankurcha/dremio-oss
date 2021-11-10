@@ -42,6 +42,7 @@ import org.apache.arrow.vector.types.pojo.ArrowType.FixedSizeList;
 import org.apache.arrow.vector.types.pojo.ArrowType.FloatingPoint;
 import org.apache.arrow.vector.types.pojo.ArrowType.Int;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 import com.dremio.common.exceptions.UserException;
 import com.dremio.common.expression.BasePath;
@@ -80,7 +81,7 @@ public class BatchSchema extends org.apache.arrow.vector.types.pojo.Schema imple
   // Dummy schema used when we cannot sample (no data from source) and there is no data from the source.
   // This can happen if the table is defined but data is not yet present in sources like Mongo/Elasticsearch.
   public static final String SCHEMA_UNKNOWN_NO_DATA_COLNAME = "NO_DATA";
-  public static final BatchSchema SCHEMA_UNKNOWN_NO_DATA = BatchSchema.newBuilder().addField(new Field(SCHEMA_UNKNOWN_NO_DATA_COLNAME, true, new ArrowType.Utf8(), null)).build();
+  public static final BatchSchema SCHEMA_UNKNOWN_NO_DATA = BatchSchema.newBuilder().addField(new Field(SCHEMA_UNKNOWN_NO_DATA_COLNAME, new FieldType(true, new ArrowType.Utf8(), null, null), null)).build();
   public static final BatchSchema EMPTY = new BatchSchema(Collections.EMPTY_LIST);
   public static final UnknownSchema UNKNOWN_SCHEMA_OBJECT = new UnknownSchema();
 
@@ -219,11 +220,11 @@ public class BatchSchema extends org.apache.arrow.vector.types.pojo.Schema imple
         if (field.getType().getTypeID() == ArrowTypeID.List) {
           Field innerField = field.getChildren().get(0);
           List<Field> childFields = maskFields(innerField.getChildren(), selection.getChild(field.getName()));
-          Field newInnerField = new Field(innerField.getName(), innerField.isNullable(), innerField.getType(), childFields);
-          fieldsListBuilder.add(new Field(field.getName(), field.isNullable(), field.getType(), Collections.singletonList(newInnerField)));
+          Field newInnerField = new Field(innerField.getName(), new FieldType(innerField.isNullable(), innerField.getType(), null, null), childFields);
+          fieldsListBuilder.add(new Field(field.getName(), new FieldType(field.isNullable(), field.getType(), null, null), Collections.singletonList(newInnerField)));
         } else {
           List<Field> childFields = maskFields(field.getChildren(), selection.getChild(field.getName()));
-          fieldsListBuilder.add(new Field(field.getName(), field.isNullable(), field.getType(), childFields));
+          fieldsListBuilder.add(new Field(field.getName(), new FieldType(field.isNullable(), field.getType(), null, null), childFields));
         }
       }
     }

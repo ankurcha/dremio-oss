@@ -19,6 +19,7 @@ import static com.dremio.exec.store.iceberg.IcebergModelCreator.DREMIO_NESSIE_DE
 import static com.dremio.exec.store.parquet.ParquetFormatDatasetAccessor.PARQUET_SCHEMA_FALLBACK_DISABLED;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -49,7 +50,6 @@ import org.apache.arrow.vector.VarCharVector;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.Table;
-import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -557,7 +557,7 @@ public class BaseTestQuery extends ExecTest {
     } catch (final Exception actualException) {
       try {
         Assert.assertTrue("UserRemoteException expected", actualException instanceof UserRemoteException);
-        Assert.assertThat(actualException.getMessage(), CoreMatchers.containsString(expectedErrorMsg));
+        Assert.assertThat(actualException.getMessage(), containsString(expectedErrorMsg));
       } catch (AssertionError e) {
         e.addSuppressed(actualException);
         throw e;
@@ -1083,7 +1083,7 @@ public class BaseTestQuery extends ExecTest {
   }
 
   public static void checkFirstRecordContains(String query, String column, String expected) throws Exception {
-    Assert.assertThat(getValueInFirstRecord(query, column), CoreMatchers.containsString(expected));
+    Assert.assertThat(getValueInFirstRecord(query, column), containsString(expected));
   }
 
   protected static IcebergModel getIcebergModel(File tableRoot, IcebergCatalogType catalogType) {

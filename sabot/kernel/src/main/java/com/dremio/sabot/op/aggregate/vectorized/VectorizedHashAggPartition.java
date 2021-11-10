@@ -68,7 +68,7 @@ public class VectorizedHashAggPartition implements AutoCloseable {
     this.identifier = identifier;
     this.buffer = buffer;
     this.decimalV2Enabled = decimalV2Enabled;
-    buffer.retain(1);
+    buffer.getReferenceManager().retain(1);
   }
 
   /**

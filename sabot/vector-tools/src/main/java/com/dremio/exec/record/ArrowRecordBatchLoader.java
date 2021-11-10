@@ -133,7 +133,7 @@ public class ArrowRecordBatchLoader implements VectorAccessible, Iterable<Vector
     ArrowRecordBatch arrowRecordBatch =
       new ArrowRecordBatch((int)recordBatchFB.length(), nodes, buffers, NoCompressionCodec.DEFAULT_BODY_COMPRESSION, false);
     for (ArrowBuf buf : buffers) {
-      buf.release();
+      buf.getReferenceManager().release();
     }
     return arrowRecordBatch;
   }

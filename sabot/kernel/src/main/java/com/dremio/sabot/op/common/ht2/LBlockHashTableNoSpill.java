@@ -588,7 +588,7 @@ public final class LBlockHashTableNoSpill implements AutoCloseable {
    * Stop tracing the insert(), and release any buffers that were allocated
    */
   public void traceEnd() {
-    traceBuf.release();
+    traceBuf.getReferenceManager().release();
     traceBuf = null;
     traceBufNext = 0;
   }

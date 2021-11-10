@@ -41,7 +41,7 @@
         Dependencies version for this module
         Submodules should rely on dependenciesManagement as much as possible
     -->
-    <arrow.version>4.0.0-20210722102535-bda216e83f-dremio</arrow.version>
+    <arrow.version>7.0.0-SNAPSHOT</arrow.version>
     <avatica.version>1.12.0</avatica.version>
     <calcite.version>1.16.0-202108042226350839-779444f</calcite.version>
     <derby.version>10.14.2.0</derby.version>
@@ -111,9 +111,9 @@
     <metrics.version>4.1.19</metrics.version>
     <mariadb.connector.version>2.3.0</mariadb.connector.version>
     <nessie.version>0.4.0</nessie.version>
-    <netty.version>4.1.48.Final</netty.version>
+    <netty.version>4.1.68.Final</netty.version>
     <netty3.version>3.10.6.Final-nohttp</netty3.version>
-    <netty.boringssl.version>2.0.28.Final</netty.boringssl.version>
+    <netty.boringssl.version>2.0.43.Final</netty.boringssl.version>
     <parquet.version>1.12.0-202012300655090309-fc8298d</parquet.version>
     <pf4j.version>3.0.1</pf4j.version>
     <postgresql.version>42.2.18</postgresql.version>
@@ -129,10 +129,10 @@
     <aws-sdk.version>1.11.761</aws-sdk.version>
     <aws-sdk-2.version>2.11.13</aws-sdk-2.version>
     <openhft-affinity.version>3.1.7</openhft-affinity.version>
-    <fbs.version>1.9.0</fbs.version>
+    <fbs.version>1.12.0</fbs.version>
     <rocksdb.version>5.14.2</rocksdb.version>
     <opencensus.version>0.24.0</opencensus.version>
-    <grpc.version>1.32.2</grpc.version>
+    <grpc.version>1.41.0</grpc.version>
     <guava.version>28.1-jre</guava.version>
     <guice.version>4.2.2</guice.version>
     <redis.clients.jedis.version>3.4.1</redis.clients.jedis.version>

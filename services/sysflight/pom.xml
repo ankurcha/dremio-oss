@@ -48,10 +48,12 @@
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>flight-core</artifactId>
+      <version>4.0.0-20210722102535-bda216e83f-dremio</version>
     </dependency>
     <dependency>
       <groupId>org.apache.arrow</groupId>
       <artifactId>flight-grpc</artifactId>
+      <version>4.0.0-20210722102535-bda216e83f-dremio</version>
     </dependency>
     <dependency>
       <groupId>com.google.protobuf</groupId>

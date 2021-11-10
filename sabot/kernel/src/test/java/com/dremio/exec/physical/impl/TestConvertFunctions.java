@@ -351,7 +351,7 @@ public class TestConvertFunctions extends BaseTestQuery {
     HadoopWritables.writeVInt(context, buffer, _0, _9, Integer.MIN_VALUE);
     intVal = HadoopWritables.readVInt(context, buffer, _0, _9);
     assertEquals(intVal, Integer.MIN_VALUE);
-    buffer.release();
+    buffer.getReferenceManager().release();
   }
 
   @Test // DRILL-4862

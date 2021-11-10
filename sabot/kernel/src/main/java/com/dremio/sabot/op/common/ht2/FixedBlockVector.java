@@ -59,7 +59,7 @@ public class FixedBlockVector implements AutoCloseable {
   }
 
   public void allocateNoClear(int count){
-    buf.release();
+    buf.getReferenceManager().release();
     buf = allocator.buffer(count * blockWidth);
     resetPositions();
   }
@@ -91,7 +91,7 @@ public class FixedBlockVector implements AutoCloseable {
     PlatformDependent.copyMemory(oldBuf.memoryAddress(), buf.memoryAddress(), oldCapacity * blockWidth);
 
     buf.writerIndex(oldBuf.writerIndex());
-    oldBuf.release();
+    oldBuf.getReferenceManager().release();
     this.capacity = newCapacity;
   }
 
@@ -124,7 +124,7 @@ public class FixedBlockVector implements AutoCloseable {
   @Override
   public synchronized void close() {
     if(buf != null){
-      buf.release();
+      buf.getReferenceManager().release();
       buf = null;
     }
   }

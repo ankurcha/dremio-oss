@@ -17,6 +17,7 @@ package com.dremio.jdbc.impl;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.calcite.avatica.AvaticaResultSet;
 import org.apache.calcite.avatica.AvaticaStatement;
 import org.apache.calcite.avatica.ColumnMetaData;
 import org.apache.calcite.avatica.Meta;
@@ -299,7 +301,7 @@ class DremioCursor implements Cursor {
         QueryDataBatch qdb = batchQueue.poll();
         // This correctly skips over the END_OF_STREAM_MESSAGE as it has null data.
         if (qdb != null && qdb.getData() != null) {
-          qdb.getData().release();
+          qdb.getData().getReferenceManager().release();
         }
       }
 

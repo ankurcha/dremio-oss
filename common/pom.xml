@@ -97,7 +97,7 @@
             <configuration>
               <artifactItems>
                 <artifactItem>
-                  <groupId>com.github.icexelloss</groupId>
+                  <groupId>com.github.shinanca</groupId>
                   <artifactId>flatc-${os.detected.classifier}</artifactId>
                   <version>${fbs.version}</version>
                   <type>exe</type>

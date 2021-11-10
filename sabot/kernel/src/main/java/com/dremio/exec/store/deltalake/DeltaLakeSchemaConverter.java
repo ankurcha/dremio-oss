@@ -89,7 +89,7 @@ public class DeltaLakeSchemaConverter {
         // Complex fields result into an ObjectNode
         if (!typeNode.isObject()) {
             final FieldType fieldType = fromPrimitiveType(typeNode.asText(), isNullable);
-            return fieldType == null ? null : new Field(name, isNullable, fieldType.getType(), new ArrayList<>());
+            return fieldType == null ? null : new Field(name, new FieldType(isNullable, fieldType.getType(), null, null), new ArrayList<>());
         } else if (DELTA_STRUCT.equalsIgnoreCase(typeNode.get(SCHEMA_STRING_FIELDS_TYPE).asText(""))) {
             final JsonNode structField = typeNode.get(SCHEMA_STRING_FIELDS);
             final List<Field> children = StreamSupport.stream(structField.spliterator(), false)

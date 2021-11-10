@@ -89,14 +89,20 @@ public class ConduitServer implements Service {
   public void start() throws Exception {
     final ConduitServiceRegistryImpl registry = (ConduitServiceRegistryImpl) registryProvider.get();
 
+    System.out.println("Adding services...");
+
     for (BindableService service : registry.getServiceList()) {
       serverBuilder.addService(service);
       inProcessServerBuilder.addService(service);
     }
 
+    System.out.println("Intercepting server...");
+
     final TracingServerInterceptor tracingServerInterceptor = TracingServerInterceptor.newBuilder().withTracer(TracerFacade.INSTANCE.getTracer()).build();
     serverBuilder.intercept(tracingServerInterceptor);
     inProcessServerBuilder.intercept(tracingServerInterceptor);
+
+    System.out.println("Adding closeable services...");
 
     for (CloseableBindableService closeableService : registry.getCloseableServiceList()) {
       logger.debug("Conduit service being added {}", closeableService.getClass().getName());
@@ -105,18 +111,28 @@ public class ConduitServer implements Service {
       closeableServices.add(closeableService);
     }
 
+    System.out.println("Setting max inbounds...");
+
     serverBuilder.maxInboundMetadataSize(Integer.MAX_VALUE).maxInboundMessageSize(Integer.MAX_VALUE)
       .intercept(TransmitStatusRuntimeExceptionInterceptor.instance());
 
     if (sslEngineFactory.isPresent()) {
+      System.out.println("SSL Engine is present...");
       final SslContextBuilder contextBuilder = sslEngineFactory.get().newServerContextBuilder();
+      System.out.println("Got new...");
       // add gRPC overrides using #configure
       ((NettyServerBuilder)serverBuilder).sslContext(GrpcSslContexts.configure(contextBuilder).build());
+      System.out.println("Added SSL context...");
     }
+    System.out.println("Build server...");
     server = serverBuilder.build();
+    System.out.println("Build in process...");
     inProcesServer = inProcessServerBuilder.build();
+    System.out.println("Start...");
     server.start();
+    System.out.println("In process start...");
     inProcesServer.start();
+    System.out.println("All done.");
 
     logger.info("ConduitServer is up. Listening on port '{}'", server.getPort());
   }

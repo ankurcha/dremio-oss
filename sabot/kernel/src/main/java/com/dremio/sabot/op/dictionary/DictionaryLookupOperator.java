@@ -35,6 +35,7 @@ import org.apache.arrow.vector.VarBinaryVector;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.util.TransferPair;
 import org.joda.time.DateTimeConstants;
 
@@ -111,8 +112,8 @@ public class DictionaryLookupOperator implements SingleInputOperator {
       final ValueVector vvIn = incoming.getValueAccessorById(TypeHelper.getValueVectorClass(field), typedFieldId.getFieldIds()).getValueVector();
 
       if (config.getDictionaryEncodedFields().containsKey(field.getName())) {
-        final ValueVector vvOut = outgoing.addOrGet(new Field(field.getName(), field.isNullable(),
-          config.getDictionaryEncodedFields().get(field.getName()).getArrowType(), field.getChildren()));
+        final ValueVector vvOut = outgoing.addOrGet(new Field(field.getName(), new FieldType(field.isNullable(),
+          config.getDictionaryEncodedFields().get(field.getName()).getArrowType(), null, null), field.getChildren()));
         // load dictionary
         if (!dictionaries.containsKey(field.getName())) {
           final VectorContainer dictionary = loadDictionary(field.getName());

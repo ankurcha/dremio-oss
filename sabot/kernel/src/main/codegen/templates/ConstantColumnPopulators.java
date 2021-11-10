@@ -31,6 +31,7 @@ import org.apache.arrow.vector.*;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.holders.DecimalHolder;
 import org.apache.arrow.vector.ipc.message.ArrowFieldNode;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 import com.dremio.common.AutoCloseables;
 import com.dremio.common.SuppressForbidden;
@@ -139,7 +140,7 @@ public class ConstantColumnPopulators {
       vector = (${minor.class}Vector)output.getVector(pair.getName());
       if (vector == null) {
         <#if minor.class == "Decimal">
-        vector = output.addField(new Field(pair.getName(), true, new Decimal(value.precision, value.scale), null), DecimalVector.class);
+        vector = output.addField(new Field(pair.getName(), new FieldType(true, new Decimal(value.precision, value.scale), null, null), null), DecimalVector.class);
         <#else>
         vector = output.addField(CompleteType.${completeType}.toField(pair.name), ${minor.class}Vector.class);
         </#if>
@@ -230,7 +231,7 @@ public class ConstantColumnPopulators {
       BaseFixedWidthVector baseFixedWidthVector = (BaseFixedWidthVector)vector;
       baseFixedWidthVector.loadFieldBuffers(arrowFieldNode, Lists.newArrayList(validityBuf, dataBuf));
       </#if>
-      arrowBuf.release();
+      arrowBuf.getReferenceManager().release();
       vector.setValueCount(count);
     }
 

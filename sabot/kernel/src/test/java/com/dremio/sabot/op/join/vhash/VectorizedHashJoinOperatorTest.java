@@ -443,7 +443,7 @@ public class VectorizedHashJoinOperatorTest {
             AutoCloseables.close(valueListFilter1, valueListFilter2); // sendRuntimeFilterAtMergePoints is mocked, which would have closed these.
 
             // Get pieces from all other fragments. At last piece's merge, filter is sent to probe scan
-            recvBuffer.retain(3);
+            recvBuffer.getReferenceManager().retain(3);
             OutOfBandMessage oobMsg2 = utils.newOOB(11, 101, 2, partitionColNames, recvBuffer, valueListFilter3, valueListFilter4);
             OutOfBandMessage oobMsg3 = utils.newOOB(11, 101, 3, partitionColNames, recvBuffer, valueListFilter5, valueListFilter6);
             OutOfBandMessage oobMsg4 = utils.newOOB(11, 101, 4, partitionColNames, recvBuffer, valueListFilter7, valueListFilter8);
@@ -519,7 +519,7 @@ public class VectorizedHashJoinOperatorTest {
             AutoCloseables.close(valueListFilter1, valueListFilter2); // sendRuntimeFilterAtMergePoints is mocked, which would have closed these.
 
             // Get pieces from all other fragments. At last piece's merge, filter is sent to probe scan
-            recvBuffer.retain(3);
+            recvBuffer.getReferenceManager().retain(3);
             OutOfBandMessage oobMsg2 = utils.newOOB(11, 101, 2, partitionColNames, recvBuffer, valueListFilter3, valueListFilter4);
             OutOfBandMessage oobMsg3 = utils.newOOB(11, 101, 3, partitionColNames, recvBuffer, valueListFilter5, valueListFilter6);
             OutOfBandMessage oobMsg4 = utils.newOOB(11, 101, 4, partitionColNames, recvBuffer, valueListFilter7, valueListFilter8);
@@ -594,7 +594,7 @@ public class VectorizedHashJoinOperatorTest {
             AutoCloseables.close(valueListFilter1, valueListFilter2); // sendRuntimeFilterAtMergePoints is mocked, which would have closed these.
 
             // Get pieces from all other fragments. At last piece's merge, filter is sent to probe scan
-            recvBuffer.retain(3);
+            recvBuffer.getReferenceManager().retain(3);
             OutOfBandMessage oobMsg2 = utils.newOOB(11, 101, 2, partitionColNames, recvBuffer, valueListFilter3, valueListFilter4);
             OutOfBandMessage oobMsg3 = utils.newOOB(11, 101, 3, partitionColNames, recvBuffer, valueListFilter5, valueListFilter6);
             OutOfBandMessage oobMsg4 = utils.newOOB(11, 101, 4, partitionColNames, recvBuffer, valueListFilter7, valueListFilter8);
@@ -665,7 +665,7 @@ public class VectorizedHashJoinOperatorTest {
             when(bloomFilter.isCrossingMaxFPP()).thenReturn(true); // To force drop
 
             // Get pieces from all other fragments. At last piece's merge, filter is sent to probe scan
-            recvBuffer.retain(3);
+            recvBuffer.getReferenceManager().retain(3);
             OutOfBandMessage oobMsg2 = utils.newOOB(11, 101, 2, partitionColNames, recvBuffer, valueListFilter3, valueListFilter4);
             OutOfBandMessage oobMsg3 = utils.newOOB(11, 101, 3, partitionColNames, recvBuffer, valueListFilter5, valueListFilter6);
             OutOfBandMessage oobMsg4 = utils.newOOB(11, 101, 4, partitionColNames, recvBuffer, valueListFilter7, valueListFilter8);
@@ -703,7 +703,9 @@ public class VectorizedHashJoinOperatorTest {
         for (int sendingFragment = 2; sendingFragment <= 4; sendingFragment++) {
             OutOfBandMessage oobMsg = runtimeFilterOOBFromMinorFragment(sendingFragment, recvBuffer, "col1");
             joinOp.workOnOOB(oobMsg);
-            Arrays.stream(oobMsg.getBuffers()).forEach(ArrowBuf::release);
+            for (final ArrowBuf arrowBuf : oobMsg.getBuffers()) {
+              arrowBuf.getReferenceManager().release();
+            }
         }
         joinOp.tryPushRuntimeFilter();
 
@@ -754,7 +756,7 @@ public class VectorizedHashJoinOperatorTest {
 
             joinOp.setTable(joinTable);
             // Get pieces from all other fragments. At last piece's merge, filter is sent to probe scan
-            recvBuffer.retain(3);
+            recvBuffer.getReferenceManager().retain(3);
             OutOfBandMessage oobMsg2 = utils.newOOB(11, 101, 2, partitionColNames, recvBuffer, valueListFilter3, valueListFilter4);
             OutOfBandMessage oobMsg3 = utils.newOOB(11, 101, 3, partitionColNames, recvBuffer, valueListFilter5, valueListFilter6);
             OutOfBandMessage oobMsg4 = utils.newOOB(11, 101, 4, partitionColNames, recvBuffer, valueListFilter7, valueListFilter8);

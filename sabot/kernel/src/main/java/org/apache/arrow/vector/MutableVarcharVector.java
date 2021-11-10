@@ -91,7 +91,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
    * @return The offset at which the next valid data may be put in the buffer.
    */
   public final int getCurrentOffset() {
-    return getstartOffset(head);
+    return getStartOffset(head);
   }
 
 
@@ -251,7 +251,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     }
 
     holder.isSet = 1;
-    holder.start = getstartOffset(actualIndex);
+    holder.start = getStartOffset(actualIndex);
     holder.end = offsetBuffer.getInt((actualIndex + 1) * OFFSET_WIDTH);
     holder.buffer = valueBuffer;
   }
@@ -324,7 +324,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     final boolean isUpdate = (fwdIndex.isSafe(index) && !fwdIndex.isNull(index));
     if (isUpdate) {
       final int actualIndex = fwdIndex.get(index);
-      final int dataOffset = getstartOffset(actualIndex);
+      final int dataOffset = getStartOffset(actualIndex);
       final int dataLength =
         offsetBuffer.getInt((actualIndex + 1) * OFFSET_WIDTH) - dataOffset;
       garbageSizeInBytes += dataLength;
@@ -448,9 +448,9 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
 
     //append at the end
     fillHoles(head);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
     final int dataLength = holder.end - holder.start;
-    final int startOffset = getstartOffset(head);
+    final int startOffset = getStartOffset(head);
     offsetBuffer.setInt((head + 1) * OFFSET_WIDTH, startOffset + dataLength);
     valueBuffer.setBytes(startOffset, holder.buffer, holder.start, dataLength);
     lastSet = head;
@@ -478,8 +478,8 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     final int dataLength = holder.end - holder.start;
     fillEmpties(head);
     handleSafe(head, dataLength);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
-    final int startOffset = getstartOffset(head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
+    final int startOffset = getStartOffset(head);
     offsetBuffer.setInt((head + 1) * OFFSET_WIDTH, startOffset + dataLength);
     valueBuffer.setBytes(startOffset, holder.buffer, holder.start, dataLength);
     lastSet = head;
@@ -506,7 +506,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     fillHoles(head);
     BitVectorHelper.setValidityBit(validityBuffer, head, holder.isSet);
     final int dataLength = holder.end - holder.start;
-    final int startOffset = getstartOffset(head);
+    final int startOffset = getStartOffset(head);
     offsetBuffer.setInt((head + 1) * OFFSET_WIDTH, startOffset + dataLength);
     valueBuffer.setBytes(startOffset, holder.buffer, holder.start, dataLength);
     lastSet = head;
@@ -535,7 +535,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     fillEmpties(head);
     handleSafe(head, dataLength);
     BitVectorHelper.setValidityBit(validityBuffer, head, holder.isSet);
-    final int startOffset = getstartOffset(head);
+    final int startOffset = getStartOffset(head);
     offsetBuffer.setInt((head + 1) * OFFSET_WIDTH, startOffset + dataLength);
     valueBuffer.setBytes(startOffset, holder.buffer, holder.start, dataLength);
     lastSet = head;
@@ -584,7 +584,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     fwdIndex.setSafe(index, head);
 
     fillHoles(head);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
     setBytes(head, value, 0, value.length);
     lastSet = head;
 
@@ -609,7 +609,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
 
     fillEmpties(head);
     handleSafe(head, value.length);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
     setBytes(head, value, 0, value.length);
     lastSet = head;
 
@@ -634,7 +634,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     fwdIndex.setSafe(index, head);
 
     fillHoles(head);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
     setBytes(head, value, start, length);
     lastSet = head;
 
@@ -661,7 +661,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
 
     fillEmpties(head);
     handleSafe(head, length);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
     setBytes(head, value, start, length);
     lastSet = head;
 
@@ -686,8 +686,8 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     fwdIndex.setSafe(index, head);
 
     fillHoles(head);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
-    final int startOffset = getstartOffset(head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
+    final int startOffset = getStartOffset(head);
     offsetBuffer.setInt((head + 1) * OFFSET_WIDTH, startOffset + length);
     valueBuffer.setBytes(startOffset, value, start, length);
     lastSet = head;
@@ -715,8 +715,8 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
 
     fillEmpties(head);
     handleSafe(head, length);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
-    final int startOffset = getstartOffset(head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
+    final int startOffset = getStartOffset(head);
     offsetBuffer.setInt((head + 1) * OFFSET_WIDTH, startOffset + length);
     valueBuffer.setBytes(startOffset, value, start, length);
     lastSet = head;
@@ -806,7 +806,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     fwdIndex.setSafe(index, head);
 
     fillHoles(head);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
     final int startOffset = offsetBuffer.getInt(head * OFFSET_WIDTH);
     offsetBuffer.setInt((head + 1) * OFFSET_WIDTH, startOffset + length);
     final ArrowBuf bb = buffer.slice(start, length);
@@ -837,7 +837,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
 
     fillEmpties(head);
     handleSafe(head, length);
-    BitVectorHelper.setValidityBitToOne(validityBuffer, head);
+    BitVectorHelper.setValidityBit(validityBuffer, head, 1);
     final int startOffset = offsetBuffer.getInt(head * OFFSET_WIDTH);
     offsetBuffer.setInt((head + 1) * OFFSET_WIDTH, startOffset + length);
     final ArrowBuf bb = buffer.slice(start, length);
@@ -860,7 +860,7 @@ public class MutableVarcharVector extends BaseVariableWidthVector {
     for (int i = from; i <= to && i < valCapacity; ++i) {
       if (!fwdIndex.isNull(i)) {
         final int actualIndex = fwdIndex.get(i);
-        final int startOffset = getstartOffset(actualIndex);
+        final int startOffset = getStartOffset(actualIndex);
         final int dataLength =
           offsetBuffer.getInt((actualIndex + 1) * OFFSET_WIDTH) - startOffset;
         in.set(i, startOffset, dataLength, valueBuffer);

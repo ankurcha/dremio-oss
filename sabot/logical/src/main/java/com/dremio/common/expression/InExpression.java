@@ -28,7 +28,7 @@ import org.apache.arrow.vector.holders.NullableTimeMilliHolder;
 import org.apache.arrow.vector.holders.NullableTimeStampMilliHolder;
 import org.apache.arrow.vector.holders.NullableVarBinaryHolder;
 import org.apache.arrow.vector.holders.NullableVarCharHolder;
-import org.apache.arrow.vector.util.ByteFunctionHelpers;
+import org.apache.arrow.memory.util.ByteFunctionHelpers;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.LongHashSet;

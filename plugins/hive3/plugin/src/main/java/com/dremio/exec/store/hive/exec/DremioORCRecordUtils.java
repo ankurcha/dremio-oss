@@ -679,7 +679,7 @@ public class DremioORCRecordUtils {
     public void clear() {
       buffers.clear();
       for (ArrowBuf buf : directBufMap.values()) {
-        buf.release();
+        buf.getReferenceManager().release();
       }
       directBufMap.clear();
     }
@@ -707,7 +707,7 @@ public class DremioORCRecordUtils {
       if (buffer.isDirect()) {
         ArrowBuf buf = directBufMap.remove(new ByteBufferWrapper(buffer));
         if (buf != null) {
-          buf.release();
+          buf.getReferenceManager().release();
         }
       } else {
         TreeMap<DremioORCRecordUtils.ByteBufferAllocatorPool.Key, ByteBuffer> tree = getBufferTree();

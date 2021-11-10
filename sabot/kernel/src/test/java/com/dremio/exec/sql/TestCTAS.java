@@ -691,9 +691,9 @@ public class TestCTAS extends PlanTestBase {
       SchemaBuilder schemaBuilder = BatchSchema.newBuilder();
       schemaBuilder.addField(CompleteType.VARCHAR.toField("name"));
       schemaBuilder.addField(CompleteType.struct(CompleteType.BIGINT.toField("age"), CompleteType.VARCHAR.toField("gender")).toField("info"));
-      schemaBuilder.addField(CompleteType.struct(new Field("arr", true, Types.MinorType.LIST.getType(),
+      schemaBuilder.addField(CompleteType.struct(new Field("arr", new FieldType(true, Types.MinorType.LIST.getType(), null, null),
           Collections.singletonList(CompleteType.BIGINT.toField("$data$"))),
-        new Field("strArr", true, Types.MinorType.LIST.getType(),
+        new Field("strArr", new FieldType(true, Types.MinorType.LIST.getType(), null, null),
           Collections.singletonList(CompleteType.VARCHAR.toField("$data$")))).toField("structWithArray"));
 
       schemaBuilder.addField(CompleteType.struct(CompleteType.struct(
@@ -704,20 +704,20 @@ public class TestCTAS extends PlanTestBase {
           .toField("struc"))
         .toField("innerStruct"))
         .toField("structWithStruct"));
-      schemaBuilder.addField(new Field("likes", true, Types.MinorType.LIST.getType(),
+      schemaBuilder.addField(new Field("likes", new FieldType(true, Types.MinorType.LIST.getType(), null, null),
         Collections.singletonList(CompleteType.VARCHAR.toField("$data$"))));
       Field structChild = CompleteType.struct(
         CompleteType.VARCHAR.toField("name"),
         CompleteType.VARCHAR.toField("gender"),
           CompleteType.BIGINT.toField("age")).toField("$data$");
 
-      schemaBuilder.addField(new Field("children", true, Types.MinorType.LIST.getType(),
+      schemaBuilder.addField(new Field("children", new FieldType(true, Types.MinorType.LIST.getType(), null, null),
           Collections.singletonList(structChild)));
 
-      Field listChild = new Field("$data$", true, Types.MinorType.LIST.getType(),
+      Field listChild = new Field("$data$", new FieldType(true, Types.MinorType.LIST.getType(), null, null),
         Collections.singletonList(CompleteType.BIGINT.toField("$data$")));
 
-      schemaBuilder.addField(new Field("matrix", true, Types.MinorType.LIST.getType(),
+      schemaBuilder.addField(new Field("matrix", new FieldType(true, Types.MinorType.LIST.getType(), null, null),
         Collections.singletonList(listChild)));
 
       assertEquals(schemaBuilder.build(), icebergSchema);

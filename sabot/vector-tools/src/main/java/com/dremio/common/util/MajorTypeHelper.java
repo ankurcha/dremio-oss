@@ -28,6 +28,7 @@ import org.apache.arrow.vector.types.pojo.ArrowType.ArrowTypeID;
 import org.apache.arrow.vector.types.pojo.ArrowType.Decimal;
 import org.apache.arrow.vector.types.pojo.ArrowType.Timestamp;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 
 import com.dremio.common.expression.CompleteType;
 import com.dremio.common.types.TypeProtos;
@@ -118,8 +119,8 @@ public class MajorTypeHelper {
     try {
     return new Field(
             name,
-            true,
-            getArrowTypeForMajorType(majorType),
+            new FieldType(true,
+            getArrowTypeForMajorType(majorType), null, null),
             getChildrenForMajorType(majorType)
     );
     } catch (IllegalArgumentException e) {

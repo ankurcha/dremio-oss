@@ -417,11 +417,11 @@ public class TestArrowFileReader extends DremioTest {
 
   /** Helper method which creates a union vector with no data */
   private static UnionVector testEmptyUnionVector(BufferAllocator allocator) {
-    final UnionVector unionVector = new UnionVector("unionVector", allocator, null);
+    final UnionVector unionVector = new UnionVector("unionVector", allocator, null, null);
     unionVector.initializeChildrenFromFields(
         asList(
             Field.nullable("intType", new ArrowType.Int(32, true)),
-            Field.nullable("decimalType", new ArrowType.Decimal(4, 10))
+            Field.nullable("decimalType", new ArrowType.Decimal(4, 10, 128))
         )
     );
 

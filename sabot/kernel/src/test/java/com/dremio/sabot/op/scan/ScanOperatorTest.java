@@ -30,7 +30,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -112,45 +111,45 @@ public class ScanOperatorTest {
             ValueListFilter m2Vlf2 = utils.prepareNewValueListBooleanFilter("npCol4", true, true, false);
 
             // START: re-use for other messages
-            m1Vlf1.buf().retain(); // msg3
-            m1Vlf2.buf().retain(); // msg3
-            bloomFilterBuf.retain(5); // msg2, msg3, msg4, msg5, msg6
-            m2Vlf1.buf().retain(3); // re-used by msg4, msg5, msg6
-            m2Vlf2.buf().retain(2); // re-used by msg4, msg5
+            m1Vlf1.buf().getReferenceManager().retain(); // msg3
+            m1Vlf2.buf().getReferenceManager().retain(); // msg3
+            bloomFilterBuf.getReferenceManager().retain(5); // msg2, msg3, msg4, msg5, msg6
+            m2Vlf1.buf().getReferenceManager().retain(3); // re-used by msg4, msg5, msg6
+            m2Vlf2.buf().getReferenceManager().retain(2); // re-used by msg4, msg5
             // END
             RecordReader mockReader = mock(RecordReader.class);
             ScanOperator scanOp = new ScanOperator(getConfig(), getMockContext(), RecordReaderIterator.from(mockReader), null, null, null);
 
             OutOfBandMessage msg1 = utils.newOOB(sendingMajorFragment1, sendingOp1, sendingMinorFragment1, m1PtCols, bloomFilterBuf, m1Vlf1, m1Vlf2);
             scanOp.workOnOOB(msg1);
-            Arrays.stream(msg1.getBuffers()).forEach(ArrowBuf::release);
+            releaseAllBuffers(msg1.getBuffers());
             assertEquals(1, scanOp.getRuntimeFilters().size());
             ArgumentCaptor<com.dremio.exec.store.RuntimeFilter> addedFilter = ArgumentCaptor.forClass(com.dremio.exec.store.RuntimeFilter.class);
 
             OutOfBandMessage msg2 = utils.newOOB(sendingMajorFragment2, sendingOp2, sendingMinorFragment1, m2PtCols, bloomFilterBuf, m2Vlf1, m2Vlf2);
             scanOp.workOnOOB(msg2);
-            Arrays.stream(msg2.getBuffers()).forEach(ArrowBuf::release);
+            releaseAllBuffers(msg2.getBuffers());
             assertEquals(2, scanOp.getRuntimeFilters().size());
 
             OutOfBandMessage msg3 = utils.newOOB(sendingMajorFragment1, sendingOp1, sendingMinorFragment2, m1PtCols, bloomFilterBuf, m1Vlf1, m1Vlf2);
             scanOp.workOnOOB(msg3); // should get skipped
-            Arrays.stream(msg3.getBuffers()).forEach(ArrowBuf::release);
+            releaseAllBuffers(msg3.getBuffers());
             assertEquals(2, scanOp.getRuntimeFilters().size());
 
             OutOfBandMessage msg4 = utils.newOOB(sendingMajorFragment2, sendingOp3, sendingMinorFragment1, m2PtCols, bloomFilterBuf, m2Vlf1, m2Vlf2);
             scanOp.workOnOOB(msg4); // shouldn't be considered as duplicate because of different sending operator.
-            Arrays.stream(msg4.getBuffers()).forEach(ArrowBuf::release);
+            releaseAllBuffers(msg4.getBuffers());
             assertEquals(3, scanOp.getRuntimeFilters().size());
 
             OutOfBandMessage msg5 = utils.newOOB(sendingMajorFragment2, sendingOp3, sendingMinorFragment1, m5PtCols, bloomFilterBuf, m2Vlf1, m2Vlf2);
             scanOp.workOnOOB(msg5);
-            Arrays.stream(msg5.getBuffers()).forEach(ArrowBuf::release);
+            releaseAllBuffers(msg5.getBuffers());
             assertEquals(4, scanOp.getRuntimeFilters().size());
 
             // With one less non partition col filter - m2vlf2
             OutOfBandMessage msg6 = utils.newOOB(sendingMajorFragment2, sendingOp3, sendingMinorFragment1, m2PtCols, bloomFilterBuf, m2Vlf1);
             scanOp.workOnOOB(msg6);
-            Arrays.stream(msg6.getBuffers()).forEach(ArrowBuf::release);
+            releaseAllBuffers(msg6.getBuffers());
             assertEquals(5, scanOp.getRuntimeFilters().size());
 
             verify(mockReader, times(5)).addRuntimeFilter(addedFilter.capture());
@@ -218,7 +217,7 @@ public class ScanOperatorTest {
             RecordReader mockReader = mock(RecordReader.class);
             ScanOperator scanOp = new ScanOperator(getConfig(), getMockContext(), RecordReaderIterator.from(mockReader), null, null, null);
             scanOp.workOnOOB(msg1);
-            Arrays.stream(msg1.getBuffers()).forEach(ArrowBuf::release);
+            releaseAllBuffers(msg1.getBuffers());
             verify(mockReader, never()).addRuntimeFilter(any(com.dremio.exec.store.RuntimeFilter.class));
         }
     }
@@ -269,5 +268,11 @@ public class ScanOperatorTest {
                         .setFilterType(RuntimeFilterType.BLOOM_FILTER)
                         .setSizeBytes(sizeBytes).build())
                 .build();
+    }
+
+    private void releaseAllBuffers(final ArrowBuf[] buffers) {
+        for (final ArrowBuf arrowBuf : buffers) {
+            arrowBuf.getReferenceManager().release();
+        }
     }
 }

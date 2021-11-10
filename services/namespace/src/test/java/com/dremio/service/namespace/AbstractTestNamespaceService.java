@@ -32,6 +32,7 @@ import org.apache.arrow.vector.types.pojo.ArrowType.Int;
 import org.apache.arrow.vector.types.pojo.ArrowType.Struct;
 import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
 import org.apache.arrow.vector.types.pojo.Field;
+import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.junit.After;
 import org.junit.Assert;
@@ -471,9 +472,9 @@ public abstract class AbstractTestNamespaceService {
 
   @Test
   public void testDataSetSchema() throws Exception {
-    Field field1 = new Field("a", true, new Int(32, true), null);
-    Field child1 = new Field("c", true, Utf8.INSTANCE, null);
-    Field field2 = new Field("b", true, Struct.INSTANCE, ImmutableList.of(child1));
+    Field field1 = new Field("a", new FieldType(true, new Int(32, true), null, null), null);
+    Field child1 = new Field("c", new FieldType(true, Utf8.INSTANCE, null, null), null);
+    Field field2 = new Field("b", new FieldType(true, Struct.INSTANCE, null, null), ImmutableList.of(child1));
     Schema schema = new Schema(ImmutableList.of(field1, field2));
     FlatBufferBuilder builder = new FlatBufferBuilder();
     schema.getSchema(builder);

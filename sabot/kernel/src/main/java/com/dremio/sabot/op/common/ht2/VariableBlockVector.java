@@ -85,7 +85,7 @@ public class VariableBlockVector implements AutoCloseable {
     buf = allocator.buffer(targetSize);
     PlatformDependent.copyMemory(oldBuf.memoryAddress(), buf.memoryAddress(), oldBuf.capacity());
     buf.writerIndex(oldBuf.writerIndex());
-    oldBuf.release();
+    oldBuf.getReferenceManager().release();
   }
 
   @VisibleForTesting
@@ -96,7 +96,7 @@ public class VariableBlockVector implements AutoCloseable {
   @Override
   public synchronized void close() {
     if(buf != null){
-      buf.release();
+      buf.getReferenceManager().release();
       buf = null;
     }
   }

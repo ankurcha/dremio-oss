@@ -206,7 +206,7 @@ public class PageReader {
         timeToRead = timer.elapsed(TimeUnit.MICROSECONDS);
         this.updateStats(pageHeader, "Decompress", start, timeToRead, compressedSize, uncompressedSize);
       } finally {
-        compressedData.release();
+        compressedData.getReferenceManager().release();
       }
     }
   }
@@ -380,14 +380,14 @@ public class PageReader {
 
   public void clearBuffers() {
     if (pageData != null) {
-      pageData.release();
+      pageData.getReferenceManager().release();
       pageData = null;
     }
   }
 
   public void clearDictionaryBuffers() {
     for (ArrowBuf b : allocatedDictionaryBuffers) {
-      b.release();
+      b.getReferenceManager().release();
     }
     allocatedDictionaryBuffers.clear();
   }

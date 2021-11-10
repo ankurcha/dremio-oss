@@ -2226,6 +2226,10 @@
       datasetID: "abc",
       datasetName: "abc",
       datasetPath: "abc",
+      datasetPathsList: [
+        "abc",
+        ...
+      ],
       datasetSizeRows: 1,
       datasetType: "abc",
       reflectionsDefinedList: [
@@ -2277,6 +2281,10 @@
         datasetID: "abc",
         datasetName: "abc",
         datasetPath: "abc",
+        datasetPathsList: [
+          "abc",
+          ...
+        ],
         datasetSizeRows: 1,
         datasetType: "abc",
         reflectionsDefinedList: [
@@ -2351,6 +2359,10 @@
       datasetID: "abc",
       datasetName: "abc",
       datasetPath: "abc",
+      datasetPathsList: [
+        "abc",
+        ...
+      ],
       datasetSizeRows: 1,
       datasetType: "abc",
       reflectionsDefinedList: [
@@ -2917,6 +2929,10 @@
           datasetID: "abc",
           datasetName: "abc",
           datasetPath: "abc",
+          datasetPathsList: [
+            "abc",
+            ...
+          ],
           datasetSizeRows: 1,
           datasetType: "abc",
           reflectionsDefinedList: [
@@ -2942,7 +2958,7 @@
       queryText: "abc",
       queryType: "UI_RUN" | "UI_PREVIEW" | "UI_INTERNAL_PREVIEW" | "UI_INTERNAL_RUN" | "UI_EXPORT" | "ODBC" | "JDBC" | "REST" | "ACCELERATOR_CREATE" | "ACCELERATOR_DROP" | "UNKNOWN" | "PREPARE_INTERNAL" | "ACCELERATOR_EXPLAIN" | "UI_INITIAL_PREVIEW" | "FLIGHT" | "METADATA_REFRESH",
       queryUser: "abc",
-      requestType: "GET_CATALOGS" | "GET_COLUMNS" | "GET_SCHEMAS" | "GET_TABLES" | "CREATE_PREPARE" | "EXECUTE_PREPARE" | "RUN_SQL" | "GET_SERVER_META",
+      requestType: "INVALID_REQUEST_TYPE" | "GET_CATALOGS" | "GET_COLUMNS" | "GET_SCHEMAS" | "GET_TABLES" | "CREATE_PREPARE" | "EXECUTE_PREPARE" | "RUN_SQL" | "GET_SERVER_META" | "UNRECOGNIZED",
       rowsReturned: 1,
       rowsScanned: 1,
       spilled: true | false,

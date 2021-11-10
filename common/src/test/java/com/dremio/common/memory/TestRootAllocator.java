@@ -84,7 +84,7 @@ public class TestRootAllocator {
       closeables.add(alloc.buffer(1));
 
       // make sure release works
-      alloc.buffer(1).release();
+      alloc.buffer(1).getReferenceManager().release();
       closeables.add(alloc.buffer(1));
       closeables.add(alloc.buffer(1));
       closeables.add(alloc.buffer(1));

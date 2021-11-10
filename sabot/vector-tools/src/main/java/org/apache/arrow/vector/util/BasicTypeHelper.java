@@ -456,13 +456,13 @@ public class BasicTypeHelper {
     switch (type) {
 
     case UNION:
-      UnionVector unionVector = new UnionVector(field.getName(), allocator, callBack);
+      UnionVector unionVector = new UnionVector(field.getName(), allocator, field.getFieldType(), callBack);
       if (!children.isEmpty()) {
         unionVector.initializeChildrenFromFields(children);
       }
       return unionVector;
     case LIST:
-      ListVector listVector = new ListVector(field.getName(), allocator, callBack);
+      ListVector listVector = new ListVector(field.getName(), allocator, field.getFieldType(), callBack);
       if (!children.isEmpty()) {
         listVector.initializeChildrenFromFields(children);
       }

@@ -15,7 +15,6 @@
  */
 package com.dremio.sabot.exec.fragment;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -164,7 +163,9 @@ public class OutOfBandMessage {
 
     // Caller is expected to release its own copy
     if (this.buffers != null && this.buffers.length > 0) {
-      Arrays.stream(this.buffers).forEach(ArrowBuf::retain);
+      for (final ArrowBuf arrowBuf : this.buffers) {
+        arrowBuf.getReferenceManager().retain();
+      }
     } else {
       this.buffers = new ArrowBuf[0];
     }

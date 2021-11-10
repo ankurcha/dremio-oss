@@ -124,7 +124,7 @@ public class TestMemoryRetention {
         Thread.sleep(8000);
         logger.info("Starting release.");
         for (final ArrowBuf buf : bufs) {
-          buf.release();
+          buf.getReferenceManager().release();
         }
         logger.info("Finished release.");
 

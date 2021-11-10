@@ -231,7 +231,7 @@ public class VectorizedProbe implements AutoCloseable {
   private void findMatches(final int records){
     if(probed == null || probed.capacity() < records * ORDINAL_SIZE){
       if(probed != null){
-        probed.release();
+        probed.getReferenceManager().release();
         probed = null;
       }
 

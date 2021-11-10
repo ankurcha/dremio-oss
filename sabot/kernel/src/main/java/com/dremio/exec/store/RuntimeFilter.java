@@ -80,7 +80,7 @@ public class RuntimeFilter implements AutoCloseable {
                 "BloomFilter value count mismatched. Expected %s, Actual %s", partitionColFilterProto.getValueCount(), bloomFilter.getNumBitsSet());
         partitionColFilter = new CompositeColumnFilter.Builder().setProtoFields(protoFilter.getPartitionColumnFilter())
                 .setBloomFilter(bloomFilter).build();
-        bloomFilter.getDataBuffer().retain();
+        bloomFilter.getDataBuffer().getReferenceManager().retain();
       } catch (Exception e) {
         stats.addLongStat(RUNTIME_COL_FILTER_DROP_COUNT, 1);
         logger.warn("Error while processing partition column filter from {} : {}", senderInfo, e.getMessage());
@@ -104,7 +104,7 @@ public class RuntimeFilter implements AutoCloseable {
         final CompositeColumnFilter nonPartitionColFilter = new CompositeColumnFilter.Builder()
                 .setProtoFields(nonPartitionColFilterProto).setValueList(valueListFilter).build();
         nonPartitionColFilters.add(nonPartitionColFilter);
-        valueListFilter.buf().retain();
+        valueListFilter.buf().getReferenceManager().retain();
       } catch (Exception e) {
         stats.addLongStat(RUNTIME_COL_FILTER_DROP_COUNT, 1);
         logger.warn("Error while processing non-partition column filter on column {}, from {} : {}",
