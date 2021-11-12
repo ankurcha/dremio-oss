@@ -49,9 +49,6 @@ public class JaninoClassCompiler extends AbstractClassCompiler {
   @Override
   protected ClassBytes[] getByteCode(final ClassNames className, final String sourcecode, boolean debug)
       throws CompileException, IOException, ClassNotFoundException, ClassTransformationException {
-    System.out.printf("Getting ByteCode:\t Clazz: %s\tDot: %s\tSlash: %s\t Sourcecode: %s\t Debug: %s%n",
-      className.clazz, className.dot, className.slash, sourcecode, debug);
-    debug = true;
     StringReader reader = new StringReader(sourcecode);
     Scanner scanner = new Scanner((String) null, reader);
     Java.CompilationUnit compilationUnit = new Parser(scanner).parseCompilationUnit();
