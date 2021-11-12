@@ -28,9 +28,6 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.lang.reflect.Field;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Formatter;
@@ -360,9 +357,7 @@ public class TestYarnWatchdog {
     t.start();
 
     String result = task.get(60, TimeUnit.SECONDS);  // make sure to have some timeout
-    final String epochInTimeZone = Instant.ofEpochMilli(0)
-      .atZone(ZoneId.systemDefault())
-      .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS"));
-    assertThat(result, is(equalTo(epochInTimeZone + " [test-log-thread] INFO    com.dremio.provision.yarn.TestYarnWatchdog - test message arg1 arg2 arg3 arg4 \n")));
+    // Make sure TZ is set to UTC...
+    assertThat(result, is(equalTo("1970-01-01 00:00:00,000 [test-log-thread] INFO    com.dremio.provision.yarn.TestYarnWatchdog - test message arg1 arg2 arg3 arg4 \n")));
   }
 }
