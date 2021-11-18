@@ -16,24 +16,24 @@
 
 package com.dremio.service.flight;
 
-import java.nio.ByteBuffer;
+import java.io.ByteArrayInputStream;
+import java.nio.channels.Channels;
 import java.util.Collections;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-import org.apache.arrow.flatbuf.Message;
 import org.apache.arrow.flight.CallOption;
 import org.apache.arrow.flight.FlightInfo;
 import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.sql.FlightSqlClient;
 import org.apache.arrow.vector.VarCharVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.arrow.vector.ipc.ReadChannel;
 import org.apache.arrow.vector.ipc.message.MessageSerializer;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.dremio.exec.expr.fn.impl.RegexpUtil;
@@ -86,7 +86,6 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
   }
 
   @Test
-  @Ignore("Needs updating the Schema deserializing logic")
   public void testGetTablesFilteringByTableAndIncludingSchema() throws Exception {
     final FlightInfo flightInfo = flightSqlClient.getTables(null, null, "columns",
       null, true, getCallOptions());
@@ -98,8 +97,12 @@ public abstract class AbstractTestFlightSqlServerCatalogMethods extends BaseFlig
 
       Assert.assertEquals(root.getRowCount(), 1);
 
-      final Schema tableSchema = MessageSerializer.deserializeSchema(Message.getRootAsMessage(ByteBuffer.wrap(
-        (byte[]) root.getVector("table_schema").getObject(0))));
+      final Schema tableSchema = MessageSerializer.deserializeSchema(
+        new ReadChannel(
+          Channels.newChannel(
+            new ByteArrayInputStream(
+              (byte[]) root.getVector("table_schema").getObject(0)
+            ))));
 
       Assert.assertEquals(tableSchema.getFields().size(), 17);
     }
