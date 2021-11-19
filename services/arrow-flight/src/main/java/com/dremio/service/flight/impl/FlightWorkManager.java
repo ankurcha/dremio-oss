@@ -24,6 +24,7 @@ import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,19 @@ public class FlightWorkManager {
   private final Provider<UserWorker> workerProvider;
   private final Provider<OptionManager> optionManagerProvider;
   private final RunQueryResponseHandlerFactory runQueryResponseHandlerFactory;
+
+  private static final byte[] EMPTY_SCHEMA_SERIALIZED;
+  static {
+    final ByteArrayOutputStream columnOutputStream = new ByteArrayOutputStream();
+    try {
+      MessageSerializer.serialize(new WriteChannel(Channels.newChannel(columnOutputStream)),
+        new Schema(Collections.emptyList()));
+    } catch (final IOException e) {
+      throw new RuntimeException("Failed to serialize schema", e);
+    }
+
+    EMPTY_SCHEMA_SERIALIZED = columnOutputStream.toByteArray();
+  }
 
   public FlightWorkManager(Provider<UserWorker> workerProvider,
                            Provider<OptionManager> optionManagerProvider,
@@ -286,15 +300,20 @@ public class FlightWorkManager {
         tableNameVector.setSafe(i, new Text(tableName));
 
         if (includeSchema) {
-          final Schema columnSchema = new Schema(tableToFields.get(tableName));
-          final ByteArrayOutputStream columnOutputStream = new ByteArrayOutputStream();
-          try {
-            MessageSerializer.serialize(new WriteChannel(Channels.newChannel(columnOutputStream)), columnSchema);
-          } catch (final IOException e) {
-            throw new RuntimeException("Failed to serialize schema", e);
-          }
+          List<Field> fields = tableToFields.get(tableName);
+          if (fields == null) {
+            schemaVector.setSafe(i, EMPTY_SCHEMA_SERIALIZED);
+          } else {
+            final Schema columnSchema = new Schema(fields);
+            final ByteArrayOutputStream columnOutputStream = new ByteArrayOutputStream();
+            try {
+              MessageSerializer.serialize(new WriteChannel(Channels.newChannel(columnOutputStream)), columnSchema);
+            } catch (final IOException e) {
+              throw new RuntimeException("Failed to serialize schema", e);
+            }
 
-          schemaVector.setSafe(i, columnOutputStream.toByteArray());
+            schemaVector.setSafe(i, columnOutputStream.toByteArray());
+          }
         }
       });
 
